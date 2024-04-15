@@ -1,8 +1,8 @@
 #include"servidorUtils.h"
 
-t_log* logger;
+//t_log* logger;
 
-int iniciar_servidor(void)
+int iniciar_servidor(char* puerto,t_log* logger, char* mensaje)
 {
 	// Quitar esta línea cuando hayamos terminado de implementar la funcion
 	//assert(!"no implementado!");
@@ -16,7 +16,7 @@ int iniciar_servidor(void)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	getaddrinfo(NULL, PUERTO, &hints, &server_info);
+	getaddrinfo(NULL, puerto, &hints, &server_info);
 
 	// Creamos el socket de escucha del servidor
 	socket_servidor = socket(server_info->ai_family,
@@ -31,19 +31,19 @@ int iniciar_servidor(void)
 	listen(socket_servidor, SOMAXCONN);
 
 	freeaddrinfo(server_info);
-	log_trace(logger, "Listo para escuchar a mi cliente");
+	log_info(logger, mensaje);
 
 	return socket_servidor;
 }
 
-int esperar_cliente(int socket_servidor)
+int esperar_cliente(int socket_servidor, t_log* logger, char* mensaje)
 {
 	// Quitar esta línea cuando hayamos terminado de implementar la funcion
 	//assert(!"no implementado!");
 
 	// Aceptamos un nuevo cliente
 	int socket_cliente = accept(socket_servidor, NULL, NULL);;
-	log_info(logger, "Se conecto un cliente!");
+	log_info(logger, mensaje);
 
 	return socket_cliente;
 }
@@ -71,7 +71,7 @@ void* recibir_buffer(int* size, int socket_cliente)
 	return buffer;
 }
 
-void recibir_mensaje(int socket_cliente)
+void recibir_mensaje(int socket_cliente,t_log* logger)
 {
 	int size;
 	char* buffer = recibir_buffer(&size, socket_cliente);

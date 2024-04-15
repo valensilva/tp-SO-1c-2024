@@ -37,6 +37,7 @@ int crear_conexion(char *ip, char* puerto)
 	connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen);
 
 	freeaddrinfo(server_info);
+	
 
 	return socket_cliente;
 }

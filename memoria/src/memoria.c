@@ -3,40 +3,50 @@
 #include "memoria.h"
 
 int main(int argc, char* argv[]) {
-    return atender_cpu();
+	//estructuras
+	inicializarEstructurasMemoria();
+	//inicializo servidor
+	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
+	//inicio espera con la cpu
+	fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
+	//atiendo cpu
+	atender_cpu();
+
+    return 0;
 }
 
-void iterator(char* value) {
+/*void iterator(char* value) {
 	log_info(logger,"%s", value);
+}*/
+void inicializarEstructurasMemoria(void){
+	loggerMemoria = iniciar_logger("memoria.log", "MEMORIA", 1, LOG_LEVEL_INFO);
+	configMemoria = iniciar_config("memoria.config");
+	puerto_escucha_memoria = config_get_string_value(configMemoria, "PUERTO_ESCUCHA");
+
 }
 
-
-int atender_cpu(void) {
-	logger = log_create("memoria.log", "MEMORIA", 1, LOG_LEVEL_DEBUG);
-
-	int memoria_fd = iniciar_servidor();
-	log_info(logger, "Memoria lista para recibir al cpu");
-	int cpu_fd = esperar_cliente(memoria_fd);
+void atender_cpu(void) {
 
 	t_list* lista;
+
 	while (1) {
-		int cod_op = recibir_operacion(cpu_fd);
+		int cod_op = recibir_operacion(fd_cpu);
 		switch (cod_op) {
 		case MENSAJE:
-			recibir_mensaje(cpu_fd);
+			recibir_mensaje(fd_cpu, loggerMemoria);
 			break;
-		case PAQUETE:
-			lista = recibir_paquete(cpu_fd);
-			log_info(logger, "Me llegaron los siguientes valores del cpu:\n");
+		/*case PAQUETE:
+			lista = recibir_paquete(fd_cpu);
+			log_info(loggerMemoria, "Me llegaron los siguientes valores del cpu:\n");
 			list_iterate(lista, (void*) iterator);
-			break;
+			break;*/
 		case -1:
-			log_error(logger, "el cpu se desconecto. Terminando servidor");
-			return EXIT_FAILURE;
+			log_error(loggerMemoria, "el cpu se desconecto. Terminando servidor");			
+			exit(EXIT_FAILURE);
 		default:
-			log_warning(logger,"Operacion desconocida.");
+			log_warning(loggerMemoria,"Operacion desconocida.");
 			break;
 		}
 	}
-	return EXIT_SUCCESS;
+	
 }
