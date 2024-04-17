@@ -2,8 +2,19 @@
 
 int main(int argc, char* argv[]) {
 
-    //inicializo estructuras
+    //Inicio Estrucutras
     inicializarEstructurasKernel();
+
+    //COMIENZO PARTE SERVIDOR
+    //Socket
+    fd_kernel = iniciar_servidor(puertoEscuchaKernel, loggerKernel, "Kernel listo para recibir conexiones");
+    
+    //Espera de conexion E/S
+    esperaEntradaSalida = esperar_cliente(fd_kernel, loggerKernel, "E/S conectado");
+
+    //Handshake
+
+
     //PARTE CLIENTE EMPIEZA
     //creo conexiones
     conexionKernelCpuDispatch = crear_conexion(ipCpu, puertoCpuDispatch);
@@ -29,12 +40,30 @@ void inicializarEstructurasKernel(void){
     ipCpu = config_get_string_value(configKernel, "IP_CPU");
     puertoCpuDispatch = config_get_string_value(configKernel, "PUERTO_CPU_DISPATCH");
     puertoCpuInterrupt = config_get_string_value(configKernel, "PUERTO_CPU_INTERRUPT");	
+    puertoEscuchaKernel = config_get_string_value(configKernel, "PUERTO_ESCUCHA");
     algoritmoPlanificacion = config_get_string_value(configKernel, "ALGORITMO_PLANIFICACION");
     quantum = config_get_int_value(configKernel, "QUANTUM");
     //recursos ¿como implementar listas?
     //instancias recursos ¿como implementar listas?
     gradoMultiprogramacion = config_get_int_value(configKernel, "GRADO_MULTIPROGRAMACION");
 }
+
+void handshakeKernel(int fd_kernel,t_log* loggerKernel){
+    int32_t handshake;
+    int32_t resultOk = 0;
+    int32_t resultError = -1;
+
+   recv(fd_kernel, &handshake, sizeof(int32_t), MSG_WAITALL);
+    if (handshake == 1) {
+      send(fd_kernel, &resultOk, sizeof(int32_t), 0);
+        log_info(loggerKernel, "Handshake completado con éxito");
+    } else {
+      send(fd_kernel, &resultError, sizeof(int32_t), 0);
+        log_error(loggerKernel, "Error al recibir el handshake");
+    }
+}
+
+
 void terminar_programa(t_log* logger, t_config* config)
 {
 	

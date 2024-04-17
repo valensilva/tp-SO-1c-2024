@@ -10,6 +10,7 @@
 #include<readline/readline.h>
 //utils
 #include <utils/clienteUtils/clienteUtils.h>
+#include <utils/servidorUtils/servidorUtils.h>
 #include <utils/utilsGenerales.h>
 
 
@@ -29,11 +30,14 @@ int quantum;
 int gradoMultiprogramacion;
 int conexionKernelCpuDispatch;
 int conexionKernelCpuInterrupt; 
+int fd_kernel;
+int esperaEntradaSalida;
 
 
 void leer_consola(t_log*);
 void paquete(int);
 void inicializarEstructurasKernel(void);
+handshakeEntradaSalida(int, t_log*);
 void terminar_programa(t_log*, t_config*);
 
 
