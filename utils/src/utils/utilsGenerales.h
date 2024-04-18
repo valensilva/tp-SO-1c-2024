@@ -6,7 +6,7 @@
 #include <commons/config.h>
 #include <commons/log.h>
 
-
+#define TRUE 1
 
 /**
 * @fn    decir_hola
@@ -15,4 +15,5 @@
 void decir_hola(char* quien);
 t_config* iniciar_config(char* archivo_config);
 t_log* iniciar_logger(char* nombreArhcivoLog, char* nombreLog, bool seMuestraEnConsola, t_log_level nivelDetalle);
+
 #endif

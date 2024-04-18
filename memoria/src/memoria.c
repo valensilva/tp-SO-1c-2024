@@ -1,5 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include "memoria.h"
 
 int main(int argc, char* argv[]) {
@@ -29,17 +27,17 @@ void atender_cpu(void) {
 
 	t_list* lista;
 
-	while (1) {
+	while (TRUE) {
 		int cod_op = recibir_operacion(fd_cpu);
 		switch (cod_op) {
 		case MENSAJE:
 			recibir_mensaje(fd_cpu, loggerMemoria);
 			break;
-		/*case PAQUETE:
+		case PAQUETE:
 			lista = recibir_paquete(fd_cpu);
 			log_info(loggerMemoria, "Me llegaron los siguientes valores del cpu:\n");
 			list_iterate(lista, (void*) iterator);
-			break;*/
+			break;
 		case -1:
 			log_error(loggerMemoria, "el cpu se desconecto. Terminando servidor");			
 			exit(EXIT_FAILURE);
@@ -49,4 +47,8 @@ void atender_cpu(void) {
 		}
 	}
 	
+}
+
+void iterator(char* value) {
+	log_info(loggerMemoria, "%s", value);
 }

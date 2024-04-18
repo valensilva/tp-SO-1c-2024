@@ -24,6 +24,6 @@ int fd_cpu;
 void iterator(char* value);
 void atender_cpu(void) ;
 void inicializarEstructurasMemoria(void);
-
+void iterator(char* value);
 
 #endif /* MEMORIA_H_ */

@@ -37,6 +37,6 @@ void inicializarEstructurasCpu(void);
 void terminar_programa(t_log*, t_config*);
 void atender_kernel_dispatch(void);
 void atender_kernel_interrupt(void);
-
+void iterator(char* value);
 
 #endif /* CPU_H_ */
