@@ -8,7 +8,13 @@ int main(void){
     fd_es = crear_conexion(ipKernel, puertoKernel);
 
     //Handshake con kernel
-    handshakeCliente(fd_es, loggerEntradaSalida);  
+    handshakeCliente(fd_es, loggerEntradaSalida);
+
+    //Conexion E/S - Memoria
+    fd_esMem = crear_conexion(ipMemoria, puertoMemoria);
+
+    //Handshake
+    handshakeCliente(fd_esMem, loggerEntradaSalida);
 
     //Terminar programa
     terminar_programa(loggerEntradaSalida, configEntradaSalida);
@@ -20,6 +26,8 @@ void inicializarEstructurasEntradaSalida(void){
 	configEntradaSalida = iniciar_config("entradasalida.config");
     puertoKernel = config_get_string_value(configEntradaSalida, "PUERTO_KERNEL");
     ipKernel = config_get_string_value(configEntradaSalida, "IP_KERNEL");
+    puertoMemoria = config_get_string_value(configEntradaSalida, "PUERTO_MEMORIA");
+    ipMemoria = config_get_string_value(configEntradaSalida, "IP_MEMORIA");
 }
 
 /*void handshakeEntradaSalida(int fd_es, t_log* loggerEntradaSalida) {

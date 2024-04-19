@@ -20,9 +20,11 @@ t_config* configMemoria;
 char* puerto_escucha_memoria;
 int fd_memoria;
 int fd_cpu;
+int fd_IO;
 
 void iterator(char* value);
 void atender_cpu(void) ;
+void atender_IO(void) ;
 void inicializarEstructurasMemoria(void);
 void iterator(char* value);
 

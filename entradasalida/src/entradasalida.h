@@ -17,8 +17,11 @@
 
 //Variables Globales
 int fd_es;
+int fd_esMem;
 char* ipKernel;
 char* puertoKernel;
+char* puertoMemoria;
+char* ipMemoria;
 char* valor;
 t_log* loggerEntradaSalida;
 t_config*configEntradaSalida;

@@ -9,6 +9,10 @@ int main(int argc, char* argv[]) {
 	fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
 	//atiendo cpu
 	atender_cpu();
+	//inicio espera con la Interfaz I/O
+	fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "Interfaz conectada");
+	//atiendo Interfaz I/O
+	atender_IO();
 
     return 0;
 }
@@ -47,6 +51,31 @@ void atender_cpu(void) {
 		}
 	}
 	
+}
+
+void atender_IO(void) {
+
+	t_list* lista;
+
+	while (TRUE) {
+		int cod_op = recibir_operacion(fd_IO);
+		switch (cod_op) {
+		case MENSAJE:
+			recibir_mensaje(fd_IO, loggerMemoria);
+			break;
+		case PAQUETE:
+			lista = recibir_paquete(fd_IO);
+			log_info(loggerMemoria, "Me llegaron los siguientes valores de la interfaz:\n");
+			list_iterate(lista, (void*) iterator);
+			break;
+		case -1:
+			log_error(loggerMemoria, "La interfaz se desconecto. Terminando servidor");			
+			exit(EXIT_FAILURE);
+		default:
+			log_warning(loggerMemoria,"Operacion desconocida.");
+			break;
+		}
+	}
 }
 
 void iterator(char* value) {
