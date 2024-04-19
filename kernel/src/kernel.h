@@ -25,6 +25,7 @@ char* puertoCpuDispatch;
 char* puertoCpuInterrupt;
 char* algoritmoPlanificacion;
 int quantum;
+
 //recursos ??
 //instancias recursos ??
 int gradoMultiprogramacion;
@@ -32,6 +33,9 @@ int conexionKernelCpuDispatch;
 int conexionKernelCpuInterrupt; 
 int fd_kernel;
 int esperaEntradaSalida;
+int conexionKernelMemoria;
+
+
 
 
 void leer_consola(t_log*);

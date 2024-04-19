@@ -42,7 +42,7 @@ int esperar_cliente(int socket_servidor, t_log* logger, char* mensaje)
 	//assert(!"no implementado!");
 
 	// Aceptamos un nuevo cliente
-	int socket_cliente = accept(socket_servidor, NULL, NULL);;
+	int socket_cliente = accept(socket_servidor, NULL, NULL);
 	log_info(logger, mensaje);
 
 	return socket_cliente;

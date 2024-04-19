@@ -21,10 +21,12 @@ char* puerto_escucha_memoria;
 int fd_memoria;
 int fd_cpu;
 int fd_IO;
+int fd_kernel;
 
 void iterator(char* value);
 void atender_cpu(void) ;
 void atender_IO(void) ;
+void atender_kernel(void);
 void inicializarEstructurasMemoria(void);
 void iterator(char* value);
 

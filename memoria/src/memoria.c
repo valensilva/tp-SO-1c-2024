@@ -6,13 +6,19 @@ int main(int argc, char* argv[]) {
 	//inicializo servidor
 	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
 	//inicio espera con la cpu
-	fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
+	//fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
 	//atiendo cpu
-	atender_cpu();
+	//atender_cpu();
 	//inicio espera con la Interfaz I/O
-	fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "Interfaz conectada");
+	//fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "Interfaz conectada");
 	//atiendo Interfaz I/O
-	atender_IO();
+	//atender_IO();
+	//incio espera con kernel
+	fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "Kernel conectado");
+	//atiendo kernel 
+	//atender_kernel();
+
+
 
     return 0;
 }
@@ -80,4 +86,30 @@ void atender_IO(void) {
 
 void iterator(char* value) {
 	log_info(loggerMemoria, "%s", value);
+}
+void atender_kernel(void) {
+	
+	t_list* lista;
+
+	while (TRUE) {
+		int cod_op = recibir_operacion(fd_kernel);
+		switch (cod_op) {
+		case MENSAJE:
+			recibir_mensaje(fd_kernel, loggerMemoria);
+			break;
+		case PAQUETE:
+			lista = recibir_paquete(fd_kernel);
+			log_info(loggerMemoria, "Me llegaron los siguientes valores del kernel:\n");
+			list_iterate(lista, (void*) iterator);
+			break;
+		case -1:
+			log_error(loggerMemoria, "el kernel se desconecto. Terminando servidor");			
+			exit(EXIT_FAILURE);
+		default:
+			log_warning(loggerMemoria,"Operacion desconocida.");
+			break;
+		}
+	}
+
+
 }
