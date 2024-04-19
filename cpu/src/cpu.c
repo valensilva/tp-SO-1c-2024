@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
 	inicializarEstructurasCpu();
 
 	//INICIA SERVIDOR CPU
-/*
+
 	//incio servidores
 	fd_cpu_dispatch = iniciar_servidor(puertoEscuchaDispatch, loggerCpu, "cpu dispatch lista para recibir conexiones");
 	fd_cpu_interrupt = iniciar_servidor(puertoEscuchaInterrupt, loggerCpu, "cpu interrupt lista para recibir conexiones");
@@ -16,11 +16,11 @@ int main(int argc, char* argv[]) {
 	fd_kernel_interrupt = esperar_cliente(fd_cpu_interrupt, loggerCpu, "kernel interrupt conectado");
 
 	//atiendo kernel dispatch
-	atender_kernel_dispatch();
+	//atender_kernel_dispatch();
 	//atiendo kernel interrupt
-	atender_kernel_interrupt();
-	*/
-
+	//atender_kernel_interrupt();
+	
+/*
 	//INICIA PARTE CLIENTE
 
     conexionCpuMemoria = crear_conexion(ipMemoria, puertoMemoria);
@@ -30,9 +30,10 @@ int main(int argc, char* argv[]) {
 	liberar_conexion(conexionCpuMemoria);
 	
 	//TERMINA PARTE CLIENTE
-
+*/
 	//termina programa -- NO COMENTAR -- se tiene que liberar la memoria
 	terminar_programa(loggerCpu, configCpu);
+	
 }
 void inicializarEstructurasCpu(void){
 	loggerCpu = iniciar_logger("cpu.log", "CPU", 1, LOG_LEVEL_INFO);

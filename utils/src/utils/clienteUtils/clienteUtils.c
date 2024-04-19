@@ -109,3 +109,27 @@ void liberar_conexion(int socket_cliente)
 {
 	close(socket_cliente);
 }
+
+void handshakeCliente(int fd, t_log* logger) {
+    size_t bytes;
+    int32_t handshake = 1;
+    int32_t result;
+
+    bytes = send(fd, &handshake, sizeof(int32_t), 0);
+    if (bytes < 0) {
+        log_error(logger, "Error al enviar el mensaje de handshake");
+        return;
+    }
+
+    bytes = recv(fd, &result, sizeof(int32_t), MSG_WAITALL);
+    if (bytes < 0) {
+        log_error(logger, "Error al recibir la respuesta de handshake");
+        return;
+    }
+
+    if (result == 0) {
+        log_info(logger, "Handshake completado con éxito");
+    } else {
+        log_error(logger, "Error en el handshake, código de error: %d", result);
+    }
+}

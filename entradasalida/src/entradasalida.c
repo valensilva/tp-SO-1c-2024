@@ -7,8 +7,8 @@ int main(void){
     //Conexion E/S - Kernel
     fd_es = crear_conexion(ipKernel, puertoKernel);
 
-    //Handshake
-    handshakeEntradaSalida(fd_es, loggerEntradaSalida);  
+    //Handshake con kernel
+    handshakeCliente(fd_es, loggerEntradaSalida);  
 
     //Terminar programa
     terminar_programa(loggerEntradaSalida, configEntradaSalida);
@@ -22,7 +22,7 @@ void inicializarEstructurasEntradaSalida(void){
     ipKernel = config_get_string_value(configEntradaSalida, "IP_KERNEL");
 }
 
-void handshakeEntradaSalida(int fd_es, t_log* loggerEntradaSalida) {
+/*void handshakeEntradaSalida(int fd_es, t_log* loggerEntradaSalida) {
     size_t bytes;
     int32_t handshake = 1;
     int32_t result;
@@ -45,10 +45,12 @@ void handshakeEntradaSalida(int fd_es, t_log* loggerEntradaSalida) {
         log_error(loggerEntradaSalida, "Error en el handshake, código de error: %d", result);
     }
 }
+*/
 
-void terminar_programa(t_log* logger, t_config* config)
+/*void terminar_programa(t_log* logger, t_config* config)
 {
 	
 	log_destroy(logger);
 	config_destroy(config);
 }
+*/

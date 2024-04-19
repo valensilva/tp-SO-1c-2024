@@ -37,8 +37,8 @@ int esperaEntradaSalida;
 void leer_consola(t_log*);
 void paquete(int);
 void inicializarEstructurasKernel(void);
-handshakeEntradaSalida(int, t_log*);
-void terminar_programa(t_log*, t_config*);
+void handshakeEntradaSalida(int, t_log*);
+//void terminar_programa(t_log*, t_config*);
 
 
 #endif /* CPU_H_ */

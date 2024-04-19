@@ -26,8 +26,9 @@ t_config*configEntradaSalida;
 void leer_consola(t_log*);
 void paquete(int);
 void inicializarEstructurasEntradaSalida(void);
-void handshakeEntradaSalida(int, t_log*);
-void terminar_programa(t_log*, t_config*);
+
+//void handshakeEntradaSalida(int, t_log*);
+//void terminar_programa(t_log*, t_config*);
 
 
 #endif /* ENTRADASALIDA_H_ */

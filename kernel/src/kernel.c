@@ -13,25 +13,30 @@ int main(int argc, char* argv[]) {
     esperaEntradaSalida = esperar_cliente(fd_kernel, loggerKernel, "E/S conectado");
 
     //Handshake
-
+/*
 
     //PARTE CLIENTE EMPIEZA
     //creo conexiones
     conexionKernelCpuDispatch = crear_conexion(ipCpu, puertoCpuDispatch);
     conexionKernelCpuInterrupt = crear_conexion(ipCpu, puertoCpuInterrupt);
+
+    //hago handshakes
+    handshakeCliente(conexionKernelCpuDispatch, loggerKernel);
+    handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
+
     //envio mensajes
-    enviar_mensaje("hola_cpu_dispatch", conexionKernelCpuDispatch);
-    enviar_mensaje("hola_cpu_Interrupt", conexionKernelCpuInterrupt);
+    //enviar_mensaje("hola_cpu_dispatch", conexionKernelCpuDispatch);
+    //enviar_mensaje("hola_cpu_interrupt", conexionKernelCpuInterrupt);
 
     //libero conexiones
     liberar_conexion(conexionKernelCpuDispatch);
-    liberar_conexion(conexionKernelCpuInterrupt);
+    //liberar_conexion(conexionKernelCpuInterrupt);
     
-    //PARTE CLIENTE TERMINA
+    //PARTE CLIENTE TERMINA 
 
     //termino programa
     terminar_programa(loggerKernel, configKernel);
-
+*/
     return 0;
 }
 void inicializarEstructurasKernel(void){
@@ -48,7 +53,7 @@ void inicializarEstructurasKernel(void){
     gradoMultiprogramacion = config_get_int_value(configKernel, "GRADO_MULTIPROGRAMACION");
 }
 
-void handshakeKernel(int fd_kernel,t_log* loggerKernel){
+/*void handshakeKernel(int fd_kernel,t_log* loggerKernel){
     int32_t handshake;
     int32_t resultOk = 0;
     int32_t resultError = -1;
@@ -61,15 +66,17 @@ void handshakeKernel(int fd_kernel,t_log* loggerKernel){
       send(fd_kernel, &resultError, sizeof(int32_t), 0);
         log_error(loggerKernel, "Error al recibir el handshake");
     }
-}
+}*/
 
 
-void terminar_programa(t_log* logger, t_config* config)
+
+/*void terminar_programa(t_log* logger, t_config* config)
 {
 	
 	log_destroy(logger);
 	config_destroy(config);
 	
-	/* Y por ultimo, hay que liberar lo que utilizamos (conexion, log y config) 
-	  con las funciones de las commons y del TP mencionadas en el enunciado */
+	Y por ultimo, hay que liberar lo que utilizamos (conexion, log y config) 
+	  con las funciones de las commons y del TP mencionadas en el enunciado 
 }
+*/

@@ -28,5 +28,6 @@ int esperar_cliente(int socket_servidor, t_log* logger, char* mensaje);
 t_list* recibir_paquete(int);
 void recibir_mensaje(int socket_cliente,t_log* logger);
 int recibir_operacion(int);
+void handshakeServidor(int fd, t_log* logger);
 
 #endif /* UTILSSERVER_H_ */
