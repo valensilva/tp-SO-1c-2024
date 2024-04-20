@@ -35,17 +35,11 @@ int main(int argc, char* argv[]) {
     //envio mensajes
     //enviar_mensaje("hola_cpu_dispatch", conexionKernelCpuDispatch);
     //enviar_mensaje("hola_cpu_interrupt", conexionKernelCpuInterrupt);
-
-    //libero conexiones
-    liberar_conexion(conexionKernelMemoria);
-    //liberar_conexion(conexionKernelCpuDispatch);
-    //liberar_conexion(conexionKernelCpuInterrupt);
-
-
     
     //PARTE CLIENTE TERMINA 
 
     //termino programa
+    liberar_conexion(conexionKernelMemoria);
     terminar_programa(loggerKernel, configKernel);
 
     return 0;
@@ -82,15 +76,3 @@ void inicializarEstructurasKernel(void){
     }
 }*/
 
-
-
-/*void terminar_programa(t_log* logger, t_config* config)
-{
-	
-	log_destroy(logger);
-	config_destroy(config);
-	
-	Y por ultimo, hay que liberar lo que utilizamos (conexion, log y config) 
-	  con las funciones de las commons y del TP mencionadas en el enunciado 
-}
-*/

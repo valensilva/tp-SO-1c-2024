@@ -14,6 +14,10 @@
 #include <utils/servidorUtils/servidorUtils.h>
 #include <utils/utilsGenerales.h>
 
+#define LOG_CPU_FILE_NAME "cpu.log"
+#define LOG_CPU_NAME "CPU"
+#define CONFIG_FILE_NAME "cpu.config"
+
 
 //variables globales
 t_log* loggerCpu;

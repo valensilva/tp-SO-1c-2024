@@ -36,8 +36,8 @@ int main(int argc, char* argv[]) {
 	
 }
 void inicializarEstructurasCpu(void){
-	loggerCpu = iniciar_logger("cpu.log", "CPU", 1, LOG_LEVEL_INFO);
-	configCpu = iniciar_config("cpu.config");	
+	loggerCpu = iniciar_logger(LOG_CPU_FILE_NAME, LOG_CPU_NAME, TRUE, LOG_LEVEL_INFO);
+	configCpu = iniciar_config(CONFIG_FILE_NAME);	
 	ipMemoria = config_get_string_value(configCpu, "IP_MEMORIA");
 	puertoMemoria = config_get_string_value(configCpu, "PUERTO_MEMORIA");
 	puertoEscuchaDispatch = config_get_string_value(configCpu, "PUERTO_ESCUCHA_DISPATCH");
@@ -74,7 +74,7 @@ void atender_kernel_interrupt(void) {
 
 	t_list* lista;
 
-	while (1) {
+	while (TRUE) {
 		int cod_op = recibir_operacion(fd_kernel_interrupt);
 		switch (cod_op) {
 		case MENSAJE:

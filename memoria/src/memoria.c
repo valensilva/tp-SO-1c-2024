@@ -18,7 +18,8 @@ int main(int argc, char* argv[]) {
 	//atiendo kernel 
 	//atender_kernel();
 
-
+	config_destroy(configMemoria);
+	log_destroy(loggerMemoria);
 
     return 0;
 }

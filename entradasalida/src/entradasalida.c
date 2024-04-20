@@ -15,6 +15,9 @@ int main(void){
 
     //Handshake
     handshakeCliente(fd_esMem, loggerEntradaSalida);
+    
+    liberar_conexion(fd_es);
+    liberar_conexion(fd_esMem);
 
     //Terminar programa
     terminar_programa(loggerEntradaSalida, configEntradaSalida);
