@@ -5,18 +5,20 @@ int main(void){
     inicializarEstructurasEntradaSalida();
 
     //Conexion E/S - Kernel
-    fd_es = crear_conexion(ipKernel, puertoKernel);
+   // fd_es = crear_conexion(ipKernel, puertoKernel);
 
     //Handshake con kernel
-    handshakeCliente(fd_es, loggerEntradaSalida);
+   // handshakeCliente(fd_es, loggerEntradaSalida);
+
+    
 
     //Conexion E/S - Memoria
     fd_esMem = crear_conexion(ipMemoria, puertoMemoria);
 
     //Handshake
     handshakeCliente(fd_esMem, loggerEntradaSalida);
-    
-    liberar_conexion(fd_es);
+  
+    //liberar_conexion(fd_es);
     liberar_conexion(fd_esMem);
 
     //Terminar programa

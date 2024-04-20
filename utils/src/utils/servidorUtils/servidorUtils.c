@@ -44,7 +44,7 @@ int esperar_cliente(int socket_servidor, t_log* logger, char* mensaje)
 	// Aceptamos un nuevo cliente
 	int socket_cliente = accept(socket_servidor, NULL, NULL);
 	log_info(logger, mensaje);
-
+	handshakeServidor(socket_cliente, logger);
 	return socket_cliente;
 }
 

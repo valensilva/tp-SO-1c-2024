@@ -4,33 +4,30 @@ int main(int argc, char* argv[]) {
 
     //Inicio Estrucutras
     inicializarEstructurasKernel();
-
-/*
-    //COMIENZO PARTE SERVIDOR
+ /*   //COMIENZO PARTE SERVIDOR
     //Socket
     fd_kernel = iniciar_servidor(puertoEscuchaKernel, loggerKernel, "Kernel listo para recibir conexiones");
     
     //Espera de conexion E/S
-    esperaEntradaSalida = esperar_cliente(fd_kernel, loggerKernel, "E/S conectado");
+    conexionEntradaSalida = esperar_cliente(fd_kernel, loggerKernel, "E/S conectado");
 
-    //Handshake
 
-    //  TERMINA PARTE SERVIDOR 
 */
+    
+    //  TERMINA PARTE SERVIDOR 
 
     //PARTE CLIENTE EMPIEZA
 
     //creo conexiones
-    //conexionKernelCpuDispatch = crear_conexion(ipCpu, puertoCpuDispatch);
-    //conexionKernelCpuInterrupt = crear_conexion(ipCpu, puertoCpuInterrupt);
-    conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
+    conexionKernelCpuDispatch = crear_conexion(ipCpu, puertoCpuDispatch);
+    conexionKernelCpuInterrupt = crear_conexion(ipCpu, puertoCpuInterrupt);
+    //conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
 
 
     //hago handshakes
-    handshakeCliente(conexionKernelMemoria, loggerKernel);
-    //handshakeCliente(conexionKernelCpuDispatch, loggerKernel);
-    
-    //handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
+    //handshakeCliente(conexionKernelMemoria, loggerKernel);
+    handshakeCliente(conexionKernelCpuDispatch, loggerKernel);
+    handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
 
     //envio mensajes
     //enviar_mensaje("hola_cpu_dispatch", conexionKernelCpuDispatch);
@@ -61,7 +58,7 @@ void inicializarEstructurasKernel(void){
     gradoMultiprogramacion = config_get_int_value(configKernel, "GRADO_MULTIPROGRAMACION");
 }
 
-/*void handshakeKernel(int fd_kernel,t_log* loggerKernel){
+void handshakeKernel(int fd_kernel,t_log* loggerKernel){
     int32_t handshake;
     int32_t resultOk = 0;
     int32_t resultError = -1;
@@ -74,5 +71,5 @@ void inicializarEstructurasKernel(void){
       send(fd_kernel, &resultError, sizeof(int32_t), 0);
         log_error(loggerKernel, "Error al recibir el handshake");
     }
-}*/
+}
 

@@ -32,7 +32,7 @@ int gradoMultiprogramacion;
 int conexionKernelCpuDispatch;
 int conexionKernelCpuInterrupt; 
 int fd_kernel;
-int esperaEntradaSalida;
+int conexionEntradaSalida;
 int conexionKernelMemoria;
 
 

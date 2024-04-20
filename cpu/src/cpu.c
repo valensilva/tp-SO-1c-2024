@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
 	inicializarEstructurasCpu();
 
 	//INICIA SERVIDOR CPU
-
+/*
 	//incio servidores
 	fd_cpu_dispatch = iniciar_servidor(puertoEscuchaDispatch, loggerCpu, "cpu dispatch lista para recibir conexiones");
 	fd_cpu_interrupt = iniciar_servidor(puertoEscuchaInterrupt, loggerCpu, "cpu interrupt lista para recibir conexiones");
@@ -15,22 +15,25 @@ int main(int argc, char* argv[]) {
 	fd_kernel_dispatch = esperar_cliente(fd_cpu_dispatch, loggerCpu, "kernel dispatch conectado");
 	fd_kernel_interrupt = esperar_cliente(fd_cpu_interrupt, loggerCpu, "kernel interrupt conectado");
 
+
+
+
 	//atiendo kernel dispatch
 	//atender_kernel_dispatch();
 	//atiendo kernel interrupt
 	//atender_kernel_interrupt();
 	
-/*
+*/
 	//INICIA PARTE CLIENTE
 
     conexionCpuMemoria = crear_conexion(ipMemoria, puertoMemoria);
-
+	handshakeCliente(conexionCpuMemoria, loggerCpu);
 	// envio a la memoria el mensaje hola_memoria
 	enviar_mensaje("hola_memoria", conexionCpuMemoria);
 	liberar_conexion(conexionCpuMemoria);
 	
 	//TERMINA PARTE CLIENTE
-*/
+
 	//termina programa -- NO COMENTAR -- se tiene que liberar la memoria
 	terminar_programa(loggerCpu, configCpu);
 	
@@ -62,7 +65,7 @@ void atender_kernel_dispatch(void) {
 			break;
 		case -1:
 			log_error(loggerCpu, "el kernel se desconecto. Terminando servidor");			
-			exit(EXIT_FAILURE);
+			exit(EXIT_FAILURE);//ver perdida de memoria
 		default:
 			log_warning(loggerCpu,"Operacion desconocida.");
 			break;
