@@ -30,8 +30,8 @@ int main(int argc, char* argv[]) {
     handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
 
     //envio mensajes
-    //enviar_mensaje("hola_cpu_dispatch", conexionKernelCpuDispatch);
-    //enviar_mensaje("hola_cpu_interrupt", conexionKernelCpuInterrupt);
+    enviar_mensaje("hola_cpu_dispatch", conexionKernelCpuDispatch);
+    enviar_mensaje("hola_cpu_interrupt", conexionKernelCpuInterrupt);
     
     //PARTE CLIENTE TERMINA 
 
