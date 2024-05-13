@@ -42,6 +42,7 @@ void leer_consola(t_log*);
 void paquete(int);
 void inicializarEstructurasKernel(void);
 void handshakeEntradaSalida(int, t_log*);
+void crearProceso(char* path, int socket_cpu, int socket_memoria);
 //void terminar_programa(t_log*, t_config*);
 
 

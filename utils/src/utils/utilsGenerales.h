@@ -1,13 +1,37 @@
-#ifndef UTILS_HELLO_H_
-#define UTILS_HELLO_H_
+#ifndef UTILSGENERALES_H
+#define UTILSGENERALES_H
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/string.h>
 #include <pthread.h>
 
 #define TRUE 1
+
+typedef enum{
+    NEW,
+    READY,
+    EXEC,
+    BLOCKED,
+    EXIT
+} EstadoProceso;
+typedef struct{
+    int registro1;
+    int registro2;
+} registros_CPU;
+typedef struct
+{
+    int pid;
+    int program_counter;
+    int quantum;
+    registros_CPU registros;
+    EstadoProceso estado;
+} pcb;
+
+extern int pidGeneral; //esto para que cada vez que creo un pcb nuevo voy actualizando el valor del 
+//pidGeneral en +=1
 
 /**
 * @fn    decir_hola

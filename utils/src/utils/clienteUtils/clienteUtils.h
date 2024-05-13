@@ -9,6 +9,7 @@
 #include<netdb.h>
 #include<string.h>
 #include<commons/log.h>
+#include<utils/utilsGenerales.h>
 
 typedef enum
 {
@@ -21,6 +22,7 @@ typedef enum
 typedef struct
 {
 	int size;
+	int offset;
 	void* stream;
 } t_buffer;
 
@@ -40,5 +42,6 @@ void enviar_paquete(t_paquete* paquete, int socket_cliente);
 void liberar_conexion(int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
 void handshakeCliente(int fd, t_log* logger);
+void enviar_pcb(pcb* pcb_a_enviar, int socket_cliente);
 
 #endif /* UTILS_H_ */

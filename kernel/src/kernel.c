@@ -1,38 +1,47 @@
 #include "kernel.h"
 
 int main(int argc, char* argv[]) {
-
+    char texto_por_consola[100];
+    char* cod_op;
+    char* path;
+    char **texto_separado;
     //Inicio Estrucutras
     inicializarEstructurasKernel();
- /*   //COMIENZO PARTE SERVIDOR
+  /* //COMIENZO PARTE SERVIDOR
     //Socket
     fd_kernel = iniciar_servidor(puertoEscuchaKernel, loggerKernel, "Kernel listo para recibir conexiones");
     
     //Espera de conexion E/S
-    conexionEntradaSalida = esperar_cliente(fd_kernel, loggerKernel, "E/S conectado");
-
-
-*/
-    
+    conexionEntradaSalida = esperar_cliente(fd_kernel, loggerKernel, "E/S conectado");   
     //  TERMINA PARTE SERVIDOR 
-
+*/
     //PARTE CLIENTE EMPIEZA
 
     //creo conexiones
     conexionKernelCpuDispatch = crear_conexion(ipCpu, puertoCpuDispatch);
     conexionKernelCpuInterrupt = crear_conexion(ipCpu, puertoCpuInterrupt);
-    //conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
+    conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
 
 
     //hago handshakes
-    //handshakeCliente(conexionKernelMemoria, loggerKernel);
+    handshakeCliente(conexionKernelMemoria, loggerKernel);
     handshakeCliente(conexionKernelCpuDispatch, loggerKernel);
     handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
 
-    //envio mensajes
-    enviar_mensaje("hola_cpu_dispatch", conexionKernelCpuDispatch);
-    enviar_mensaje("hola_cpu_interrupt", conexionKernelCpuInterrupt);
-    
+    //INICIO CONSOLA
+    while(1){ 
+    printf("Ingrese codigo de operacion\n");
+    scanf("%s", texto_por_consola);
+    texto_separado = string_split(texto_por_consola, " ");
+    cod_op = texto_separado[0];
+    path = texto_separado[1];
+    if (strcmp(cod_op, "INICIAR_PROCESO") == 0){
+        crearProceso(path, conexionKernelCpuDispatch, conexionKernelMemoria);
+    }
+    else {
+        printf("no funciona :c");
+    }
+    }  
     //PARTE CLIENTE TERMINA 
 
     //termino programa
@@ -73,3 +82,9 @@ void handshakeKernel(int fd_kernel,t_log* loggerKernel){
     }
 }
 
+void crearProceso(char* path, int socket_cpu, int socket_memoria){
+    pcb proceso = {pidGeneral, 0, quantum,{0,0}, NEW};
+    pidGeneral += 1;
+    enviar_pcb(&proceso, socket_cpu);
+    enviar_mensaje(path, socket_memoria);
+}

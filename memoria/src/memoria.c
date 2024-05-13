@@ -6,15 +6,15 @@ int main(int argc, char* argv[]) {
 	//inicializo servidor
 	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
 	//inicio espera con la cpu
-	//fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
+	fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
 
 	//atiendo cpu
-	//atender_cpu();
+	atender_cpu();
 	//inicio espera con la Interfaz I/O
-	fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "Interfaz conectada");
+	//fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "Interfaz conectada");
 
 	//atiendo Interfaz I/O
-	atender_IO();
+	//atender_IO();
 	//incio espera con kernel
 	//fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "Kernel conectado");
 	//atiendo kernel 

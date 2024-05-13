@@ -29,3 +29,4 @@ void terminar_programa(t_log* logger, t_config* config)
 	log_destroy(logger);
 	config_destroy(config);
 }
+int pidGeneral = 1;
