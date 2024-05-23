@@ -52,8 +52,9 @@ void inicializarEstructurasCpu(void){
 }
 void atender_kernel_dispatch(void) {
 
-	t_list* lista;
+	pcb * pcb_recibido = NULL;
 	int seguir = 1;//seguir es para que si se desconecta el cliente no se termine el programa y poder salir del while
+	
 	while (seguir!=0) {
 		int cod_op = recibir_operacion(fd_kernel_dispatch);
 		switch (cod_op) {
@@ -61,14 +62,25 @@ void atender_kernel_dispatch(void) {
 			recibir_mensaje(fd_kernel_dispatch, loggerCpu);
 			break;
 		case PAQUETE:
-    		pcb* pcb_recibido = malloc(sizeof(pcb));
+    		if( (pcb_recibido = malloc(sizeof(pcb))) == NULL) {
+				log_error(loggerCpu, "Error al asignar memoria");
+				seguir = 0;
+				break;
+			}
 			recibir_pcb(fd_kernel_dispatch,pcb_recibido);
 			log_info(loggerCpu, "Me llegaron los siguientes valores del kernel dispatch:\n");
-			log_info(loggerCpu, "pid: %d\n", pcb_recibido->pid);
+			log_info(loggerCpu, "pid: %d", pcb_recibido->pid);
 			log_info(loggerCpu, "Program Counter: %d", pcb_recibido->program_counter);
             log_info(loggerCpu, "Quantum: %d", pcb_recibido->quantum);
 			log_info(loggerCpu, "State: %d", pcb_recibido->estado);
+			log_info(loggerCpu, "Registros: [ %d ][ %d ]", pcb_recibido->registros.registro1, pcb_recibido->registros.registro2);
 			
+			//pido instrucciones
+
+			//ejecuto ciclo de instruccion
+			ciclo_de_instruccion(pcb_recibido);
+
+			free(pcb_recibido);
 			break;
 		case -1:
 			seguir = 0;	
@@ -94,7 +106,6 @@ void atender_kernel_interrupt(void) {
 		case PAQUETE:
 			lista = recibir_paquete(fd_kernel_interrupt);
 			log_info(loggerCpu, "Me llegaron los siguientes valores del kernel interrupt:\n");
-			list_iterate(lista, (void*) iterator);
 			break;
 		case -1:
 			seguir = 0;	
@@ -108,13 +119,9 @@ void atender_kernel_interrupt(void) {
 	
 }
 
-void iterator(char* value) {
-	log_info(loggerCpu, "%s", value);
-}
+void recibir_pcb(int socket_cliente, pcb* pcb_recibido) {
 
-void recibir_pcb(int socket_cliente,pcb* pcb_recibido) {
     t_list* valores = recibir_paquete(socket_cliente);
-
 
     // Extraer los datos de la lista de valores
     // Se asume que los valores están en el mismo orden que en la función enviar_pcb
@@ -143,5 +150,74 @@ void recibir_pcb(int socket_cliente,pcb* pcb_recibido) {
     // Liberar la lista de valores
     list_destroy_and_destroy_elements(valores, free);
 
-    return pcb_recibido;
+}
+typedef enum {
+	SET,
+	SUM,
+	SUB,
+	JNZ,
+	IO_GEN_SLEEP
+} cod_instruccion;
+
+typedef enum {
+	AX,
+	BX,
+	CX,
+	DX,
+} reg8_t;
+
+uint8_t reg8[] = [AX, BX, CX, DX];
+uint32_t reg32[] = [];
+
+uint32_t reg[] = [AX, BX, CX, DX, EAX];
+
+void ciclo_de_instruccion(pcb* proceso_exec/*, t_list* instrucciones*/){
+
+	// "SET AX 3"
+	// texto_separado = string_split(instruccion, " ");
+	// inst[0] = "SET"-> cod_inst
+	// isnt[1] = "AX" -> 
+	// inst[2] = "3"  -> atoi()
+
+
+	//fetch
+	uint8_t AX;
+	uint32_t valor = 2;
+
+	uint32_t parametros[] = {AX, valor};
+	//instruccion_t * proxima_instruccion = list_get(instrucciones, proceso_exec->program_counter);
+	instruccion_t * instruccion = {SET, parametros};
+	//decode
+	
+	// SET AX  2    SET uint8_t  uint32_t
+	// SET EAX 2    SET uint32_t uint32_t
+	// SUM AX EAX   SUM uint8_t  uint32_t
+
+	//execute
+	switch (instruccion->cod_instruccion)
+	{
+	case SET:
+		log_info(loggerCpu, "INSTRUCCION SET ");
+
+		reg = instruccion->parametros[1];
+		log_info(loggerCpu, "valor de reg[] = %d", reg[valorRecibido]);
+		++(proceso_exec->program_counter);
+		break;
+	case SUM:
+		log_info(loggerCpu, "INSTRUCCION SUM");
+		break;
+	case JNZ:
+		log_info(loggerCpu, "INSTRUCCION JNZ");
+		break;
+	case SUB:
+		log_info(loggerCpu, "INSTRUCCION SUB");
+		break;
+	case IO_GEN_SLEEP:
+		log_info(loggerCpu, "INSTRUCCION IO_GEN_SLEEP");
+		break;	
+	default:
+		break;
+	}
+
+	//chek_Interrupt
 }
