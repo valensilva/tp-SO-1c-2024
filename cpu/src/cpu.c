@@ -61,9 +61,14 @@ void atender_kernel_dispatch(void) {
 			recibir_mensaje(fd_kernel_dispatch, loggerCpu);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(fd_kernel_dispatch);
+    		pcb* pcb_recibido = malloc(sizeof(pcb));
+			recibir_pcb(fd_kernel_dispatch,pcb_recibido);
 			log_info(loggerCpu, "Me llegaron los siguientes valores del kernel dispatch:\n");
-			list_iterate(lista, (void*) iterator);
+			log_info(loggerCpu, "pid: %d\n", pcb_recibido->pid);
+			log_info(loggerCpu, "Program Counter: %d", pcb_recibido->program_counter);
+            log_info(loggerCpu, "Quantum: %d", pcb_recibido->quantum);
+			log_info(loggerCpu, "State: %d", pcb_recibido->estado);
+			
 			break;
 		case -1:
 			seguir = 0;	
@@ -105,4 +110,38 @@ void atender_kernel_interrupt(void) {
 
 void iterator(char* value) {
 	log_info(loggerCpu, "%s", value);
+}
+
+void recibir_pcb(int socket_cliente,pcb* pcb_recibido) {
+    t_list* valores = recibir_paquete(socket_cliente);
+
+
+    // Extraer los datos de la lista de valores
+    // Se asume que los valores están en el mismo orden que en la función enviar_pcb
+    int offset = 0;
+
+    // Obtener el pid
+    memcpy(&(pcb_recibido->pid), list_get(valores, offset), sizeof(int));
+    offset++;
+
+    // Obtener el program_counter
+    memcpy(&(pcb_recibido->program_counter), list_get(valores, offset), sizeof(int));
+    offset++;
+
+    // Obtener el quantum
+    memcpy(&(pcb_recibido->quantum), list_get(valores, offset), sizeof(int));
+    offset++;
+
+    // Obtener los registros
+    memcpy(&(pcb_recibido->registros), list_get(valores, offset), sizeof(registros_CPU));
+    offset++;
+
+    // Obtener el estado
+    memcpy(&(pcb_recibido->estado), list_get(valores, offset), sizeof(EstadoProceso));
+    offset++;
+
+    // Liberar la lista de valores
+    list_destroy_and_destroy_elements(valores, free);
+
+    return pcb_recibido;
 }

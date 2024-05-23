@@ -1,8 +1,8 @@
 #include "kernel.h"
 
 int main(int argc, char* argv[]) {
-    char texto_por_consola[100];
-    char* cod_op;
+    char texto_por_consola[MAX_CONSOLA];
+    char* cod_op_kernel;
     char* path;
     char **texto_separado;
     //Inicio Estrucutras
@@ -30,17 +30,19 @@ int main(int argc, char* argv[]) {
 
     //INICIO CONSOLA
     while(1){ 
-    printf("Ingrese codigo de operacion\n");
-    scanf("%s", texto_por_consola);
-    texto_separado = string_split(texto_por_consola, " ");
-    cod_op = texto_separado[0];
-    path = texto_separado[1];
-    if (strcmp(cod_op, "INICIAR_PROCESO") == 0){
-        crearProceso(path, conexionKernelCpuDispatch, conexionKernelMemoria);
-    }
-    else {
-        printf("no funciona :c");
-    }
+        printf("Ingrese codigo de operacion\n");
+        fgets(texto_por_consola, MAX_CONSOLA, stdin);
+        texto_por_consola[strlen(texto_por_consola)-1] = '\0';
+
+        texto_separado = string_split(texto_por_consola, " ");
+        cod_op_kernel = texto_separado[0];
+        path = texto_separado[1];
+        if (strcmp(cod_op_kernel, "INICIAR_PROCESO") == 0){
+            crearProceso(path, conexionKernelCpuDispatch, conexionKernelMemoria);
+        }
+        else {
+            printf("no funciona :c");
+        }
     }  
     //PARTE CLIENTE TERMINA 
 
