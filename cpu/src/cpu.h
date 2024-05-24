@@ -19,6 +19,19 @@
 #define CONFIG_FILE_NAME "cpu.config"
 
 
+#define AX 0
+#define BX 1
+#define CX 3
+#define DX 0
+#define EAX 0 
+#define EBX 0 
+#define ECX 0 
+#define EDX 0
+#define SI 0
+#define DI 0
+#define PC 0
+
+
 //variables globales
 t_log* loggerCpu;
 t_config* configCpu;
@@ -42,5 +55,28 @@ void terminar_programa(t_log*, t_config*);
 void atender_kernel_dispatch(void);
 void atender_kernel_interrupt(void);
 void iterator(char* value);
+
+typedef enum {
+	SET,
+	SUM,
+	SUB,
+	JNZ,
+	IO_GEN_SLEEP
+} cod_instruccion;
+
+typedef enum {
+	REG_AX,
+	REG_BX,
+	REG_CX,
+	REG_DX,
+	REG_EAX,
+	REG_EBX,
+	REG_ECX,
+	REG_EDX,
+	REG_SI,
+	REG_DI,
+	REG_PC,
+} reg_t;
+
 
 #endif /* CPU_H_ */
