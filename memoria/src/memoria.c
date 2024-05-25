@@ -183,7 +183,7 @@ void enviarInstruccion(){
     size_t bytes;
     bytes = recv(fd_cpu, &numeroDeInstruccion, sizeof(int), MSG_WAITALL);
     if(bytes<0){
-        log_error(loggerMemoria, "error al recibir nro de instruccion");
+        log_error(loggerMemoria, "error al recibir número de instruccion");
         return;
     }
     char* instruccion = list_get(listaInstrucciones, numeroDeInstruccion);
