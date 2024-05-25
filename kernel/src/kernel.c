@@ -39,7 +39,8 @@ int main(int argc, char* argv[]) {
     path = texto_separado[1];    
     if (strcmp(cod_op, "INICIAR_PROCESO") == 0){
         crearProceso(path, conexionKernelMemoria);
-        if(esFIFO()==1) planificarPorFIFO();
+        if(esFIFO() == 1) planificarPorFIFO();
+        else if(esRR() == 1) planificarPorRR();
         
     }
     else {
@@ -128,6 +129,11 @@ int esFIFO(){
     }
     else return 0;
 }
+int esRR(){
+    if(strcmp(algoritmoPlanificacion, "RR") == 0){
+        return 1;
+    }else return 0;
+}
 void planificarPorFIFO(){
     while(1){
         algoritmoFIFO(colaReady);
@@ -152,20 +158,44 @@ void recibirPCBCPUFIFO(){
             break;
     }
 }
-/*void planificarPorRR(){
+void planificarPorRR(){
     while(1){
-
+        algoritmoRR(colaReady);
+        recibirPCBCPURR();
     }
 }
-*/
 void terminar_proceso(op_code code_op){
     pcb* proceso = recibir_pcb(conexionKernelCpuDispatch);
     proceso->estado = EXIT;
     t_paquete* paquete = crear_paquete(PCB_EXIT);
     enviar_paquete(paquete, conexionKernelMemoria);
+    log_info(loggerKernel, "PID: <%d> - Finalizado", proceso->pid);
     free(proceso);
 }
-/*void algoritmoRR(t_queue* cola){
+void algoritmoRR(t_queue* cola){
     pcb* proceso = queue_pop(cola);
     proceso->estado = EXECUTE;
-}*/
+    procesosEnReady--;
+    enviar_pcb(proceso, conexionKernelCpuDispatch);
+    pthread_create(&hiloContadorQuantum, NULL, (void*) esperarQuantum, NULL);
+    pthread_detach(hiloContadorQuantum);
+    free(proceso);    
+}
+void recibirPCBCPURR(){
+    op_code cod_op = recibir_operacion(conexionKernelCpuDispatch);
+    switch (cod_op)
+    {
+    case PCB_EXIT:
+        pthread_cancel(hiloContadorQuantum);
+        terminar_proceso(PCB_EXIT);
+        break;    
+    default:
+        log_warning(loggerKernel, "operacion desconocida.");
+        break;
+    }
+}
+void esperarQuantum(){
+    usleep(quantum);
+    int interrupcion = 1;
+    send(conexionKernelCpuInterrupt, &interrupcion, sizeof(int), 0);
+}

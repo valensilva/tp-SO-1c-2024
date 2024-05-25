@@ -39,7 +39,7 @@ int procesosEnReady;
 t_queue* colaNew;
 t_queue* colaReady;
 t_queue* colaExecute;
-
+pthread_t hiloContadorQuantum;
 
 
 
@@ -55,6 +55,13 @@ void planificarPorFIFO();
 void algoritmoFIFO(t_queue* cola);
 void recibirPCBCPUFIFO();
 void terminar_proceso(op_code code_op);
+void esperarQuantum();
+void recibirPCBCPURR();
+void algoritmoRR(t_queue* cola);
+void terminar_proceso(op_code code_op);
+int esRR();
+int esFIFO();
+void planificarPorRR();
 //void terminar_programa(t_log*, t_config*);
 
 
