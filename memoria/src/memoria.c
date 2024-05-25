@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
     fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "I/O conectado");
     */
     fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "kernel conectado");
-    /*
+    
     //inicio espera con la cpu
 	pthread_t hilo_cpu;
     pthread_create(&hilo_cpu, NULL,(void*) atender_cpu, NULL);
@@ -23,11 +23,13 @@ int main(int argc, char* argv[]) {
 	pthread_t hilo_IO;
     pthread_create(&hilo_IO, NULL,(void*) atender_IO , NULL);
     pthread_detach(hilo_IO);
-    */
+    
+
 	//incio espera con kernel 
 	pthread_t hilo_kernel;
     pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
     pthread_join(hilo_kernel, NULL);
+
 
 
     leer_archivo(pathArchivo);
