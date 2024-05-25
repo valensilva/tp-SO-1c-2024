@@ -1,24 +1,49 @@
 #include "memoria.h"
 
 int main(int argc, char* argv[]) {
-	//estructuras
+	
+    //estructuras
 	inicializarEstructurasMemoria();
+
+    /*
 	//inicializo servidor
 	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
-	//inicio espera con la cpu
-	fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
 
-	//atiendo cpu
-	atender_cpu();
+
+
+    fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
+    fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "I/O conectado");
+    fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "kernel conectado");
+
+
+    //inicio espera con la cpu
+	pthread_t hilo_cpu;
+    pthread_create(&hilo_cpu, NULL,(void*) atender_cpu, NULL);
+    pthread_detach(hilo_cpu);
+
 	//inicio espera con la Interfaz I/O
-	//fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "Interfaz conectada");
+	pthread_t hilo_IO;
+    pthread_create(&hilo_IO, NULL,(void*) atender_IO , NULL);
+    pthread_detach(hilo_IO);
 
-	//atiendo Interfaz I/O
-	//atender_IO();
-	//incio espera con kernel
-	//fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "Kernel conectado");
-	//atiendo kernel 
-	//atender_kernel();
+	//incio espera con kernel 
+	pthread_t hilo_kernel;
+    pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
+    pthread_join(hilo_kernel);
+
+*/
+    leer_archivo("/home/utnso/Desktop/Prueba.txt");
+
+	int i=0;
+	while  (i < list_size(listaInstrucciones)){
+        char*a= list_get(listaInstrucciones, i);
+        printf("%s", a );
+        i++;
+
+
+
+
+    }
 
 	config_destroy(configMemoria);
 	log_destroy(loggerMemoria);
@@ -26,7 +51,8 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-/*void iterator(char* value) {
+/*
+void iterator(char* value) {
 	log_info(logger,"%s", value);
 }*/
 void inicializarEstructurasMemoria(void){
@@ -37,82 +63,116 @@ void inicializarEstructurasMemoria(void){
 }
 
 void atender_cpu(void) {
+    
+    t_list* lista;
 
-	t_list* lista;
-
-	while (TRUE) {
-		int cod_op = recibir_operacion(fd_cpu);
-		switch (cod_op) {
-		case MENSAJE:
-			recibir_mensaje(fd_cpu, loggerMemoria);
-			break;
-		case PAQUETE:
-			lista = recibir_paquete(fd_cpu);
-			log_info(loggerMemoria, "Me llegaron los siguientes valores del cpu:\n");
-			list_iterate(lista, (void*) iterator);
-			break;
-		case -1:
-			log_error(loggerMemoria, "el cpu se desconecto. Terminando servidor");			
-			exit(EXIT_FAILURE);
-		default:
-			log_warning(loggerMemoria,"Operacion desconocida.");
-			break;
-		}
-	}
-	
+    while (TRUE) {
+        int cod_op = recibir_operacion(fd_cpu);
+        switch (cod_op) {
+            case MENSAJE:
+                recibir_mensaje(fd_cpu, loggerMemoria);
+                break;
+            case PAQUETE:
+                lista = recibir_paquete(fd_cpu);
+                log_info(loggerMemoria, "Me llegaron los siguientes valores del cliente:\n");
+                list_iterate(lista, (void*)iterator);
+                break;
+            case -1:
+                log_error(loggerMemoria, "El cliente se desconectó. Terminando hilo de conexión");
+                pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
+            default:
+                log_warning(loggerMemoria, "Operación desconocida.");
+                break;
+        }
+    }
 }
+
+
+	
+
 
 void atender_IO(void) {
+    
+    t_list* lista;
 
-	t_list* lista;
-
-	while (TRUE) {
-		int cod_op = recibir_operacion(fd_IO);
-		switch (cod_op) {
-		case MENSAJE:
-			recibir_mensaje(fd_IO, loggerMemoria);
-			break;
-		case PAQUETE:
-			lista = recibir_paquete(fd_IO);
-			log_info(loggerMemoria, "Me llegaron los siguientes valores de la interfaz:\n");
-			list_iterate(lista, (void*) iterator);
-			break;
-		case -1:
-			log_error(loggerMemoria, "La interfaz se desconecto. Terminando servidor");			
-			exit(EXIT_FAILURE);
-		default:
-			log_warning(loggerMemoria,"Operacion desconocida.");
-			break;
-		}
-	}
+    while (TRUE) {
+        int cod_op = recibir_operacion(fd_IO);
+        switch (cod_op) {
+            case MENSAJE:
+                recibir_mensaje(fd_IO, loggerMemoria);
+                break;
+            case PAQUETE:
+                lista = recibir_paquete(fd_IO);
+                log_info(loggerMemoria, "Me llegaron los siguientes valores del cliente:\n");
+                list_iterate(lista, (void*)iterator);
+                break;
+            case -1:
+                log_error(loggerMemoria, "El cliente se desconectó. Terminando hilo de conexión");
+                pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
+            default:
+                log_warning(loggerMemoria, "Operación desconocida.");
+                break;
+        }
+    }
 }
+
 
 void iterator(char* value) {
 	log_info(loggerMemoria, "%s", value);
 }
 void atender_kernel(void) {
-	
-	t_list* lista;
+    
+    t_list* lista;
 
-	while (TRUE) {
-		int cod_op = recibir_operacion(fd_kernel);
-		switch (cod_op) {
-		case MENSAJE:
-			recibir_mensaje(fd_kernel, loggerMemoria);
-			break;
-		case PAQUETE:
-			lista = recibir_paquete(fd_kernel);
-			log_info(loggerMemoria, "Me llegaron los siguientes valores del kernel:\n");
-			list_iterate(lista, (void*) iterator);
-			break;
-		case -1:
-			log_error(loggerMemoria, "el kernel se desconecto. Terminando servidor");			
-			exit(EXIT_FAILURE);
-		default:
-			log_warning(loggerMemoria,"Operacion desconocida.");
-			break;
-		}
-	}
+    while (TRUE) {
+        int cod_op = recibir_operacion(fd_kernel);
+        switch (cod_op) {
+            case MENSAJE:
+                recibir_mensaje(fd_kernel, loggerMemoria);
+                break;
+
+            case PAQUETE:
+                lista = recibir_paquete(fd_kernel);
+                log_info(loggerMemoria, "Me llegaron los siguientes valores del cliente:\n");
+                list_iterate(lista, (void*)iterator);
+                break;
+            case -1:
+                log_error(loggerMemoria, "El cliente se desconectó. Terminando hilo de conexión");
+                pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
+            default:
+                log_warning(loggerMemoria, "Operación desconocida.");
+                break;
+        }
+    }
+}
+
+
+
+void leer_archivo(const char* file) {
+    int contador=0;
+
+     FILE *pseudocodiogo = fopen(file, "r");
+
+    if (pseudocodiogo!= NULL)
+    {
+        char *instruccion;
+        listaInstrucciones = list_create();
+
+        while (!feof (pseudocodiogo))
+        {
+            fread(&instruccion, (strlen(instruccion) + 1), 1, pseudocodiogo);
+            list_add_in_index(listaInstrucciones, contador, instruccion);
+            contador++;
+        }
+    }
+    else
+    {
+        log_error(loggerMemoria, "No se pudo abrir el archivo");
+        exit(1);
+    }
+
+    fclose(pseudocodiogo);
+
 
 
 }

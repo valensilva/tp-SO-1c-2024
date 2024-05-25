@@ -20,7 +20,8 @@
 			"algorithm": "c",
 			"memory": "c",
 			"initializer_list": "c",
-			"numeric": "c"
+			"numeric": "c",
+			"new file": "c"
 		},
 		"C_Cpp.errorSquiggles": "disabled",
 	},
