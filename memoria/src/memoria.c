@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
 
 
 
-    leer_archivo(pathArchivo);
+    //leer_archivo(pathArchivo);
 
 	int i=0;
 	while  (i < list_size(listaInstrucciones)){
@@ -73,6 +73,8 @@ void atender_cpu(void) {
                 log_info(loggerMemoria, "Me llegaron los siguientes valores del cliente:\n");
                 list_iterate(lista, (void*)iterator);
                 break;
+            case INSTRUCCIONES:
+                enviarInstruccion();
             case -1:
                 log_error(loggerMemoria, "El cliente se desconectó. Terminando hilo de conexión");
                 pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
@@ -132,8 +134,9 @@ void atender_kernel(void) {
                 list_iterate(lista, (void*)iterator);
                 break;
             case PATHARCHIVO:
-                recibir_path(fd_kernel, loggerMemoria, pathArchivo);
-               // leer_archivo(pathArchivo);
+                recibir_path(fd_kernel, loggerMemoria, &pathArchivo);
+                leer_archivo(pathArchivo);
+                break;
             case -1:
                 log_error(loggerMemoria, "El cliente se desconectó. Terminando hilo de conexión");
                 pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
@@ -148,13 +151,14 @@ void atender_kernel(void) {
 
 void leer_archivo(const char* file) {
     int contador = 0;
+    int confirmacion;
     char buffer[100]; // Define un buffer para almacenar una línea del archivo
-    FILE *pseudocodiogo = fopen(file, "r");
+    FILE *pseudocodigo = fopen(file, "r");
 
-    if (pseudocodiogo != NULL) {
+    if (pseudocodigo != NULL) {
         listaInstrucciones = list_create();
 
-        while (fgets(buffer, 100, pseudocodiogo) != NULL) {
+        while (fgets(buffer, 100, pseudocodigo) != NULL) {
             // Elimina el carácter de nueva línea al final de la línea leída
             buffer[strcspn(buffer, "\n")] = '\0';
             
@@ -165,10 +169,24 @@ void leer_archivo(const char* file) {
             list_add_in_index(listaInstrucciones, contador, instruccion);
             contador++;
         }
-
-        fclose(pseudocodiogo);
+        confirmacion = 1;
+        size_t bytes = send(fd_cpu, &confirmacion, sizeof(int), 0);
+        fclose(pseudocodigo);
     } else {
-        log_error(loggerMemoria, "No se pudo abrir el archivo");
+        confirmacion = 0;
+        log_error(loggerMemoria, "No se pudo abrir el archivo: %s", strerror(errno));
         exit(1);
     }
+}
+void enviarInstruccion(){
+    int numeroDeInstruccion;
+    size_t bytes;
+    bytes = recv(fd_cpu, &numeroDeInstruccion, sizeof(int), MSG_WAITALL);
+    if(bytes<0){
+        log_error(loggerMemoria, "error al recibir nro de instruccion");
+        return;
+    }
+    char* instruccion = list_get(listaInstrucciones, numeroDeInstruccion);
+    bytes = send(fd_cpu, instruccion, strlen(instruccion) + 1, 0);
+    if(bytes<0) log_error(loggerMemoria, "error al enviar la instruccion");
 }

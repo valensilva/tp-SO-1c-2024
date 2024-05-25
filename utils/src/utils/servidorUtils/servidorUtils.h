@@ -32,6 +32,6 @@ int recibir_operacion(int);
 void handshakeServidor(int fd, t_log* logger);
 pcb* recibir_pcb(int socket_cliente);
 pcb* deserializar_pcb(void* buffer, int* desplazamiento);
-void recibir_path(int socket_cliente,t_log* logger, char* path);
+void recibir_path(int socket_cliente,t_log* logger, char** path);
 
 #endif /* UTILSSERVER_H_ */

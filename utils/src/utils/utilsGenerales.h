@@ -8,6 +8,7 @@
 #include <commons/string.h>
 #include <pthread.h>
 #include <commons/collections/list.h>
+#include <errno.h>
 #define TRUE 1
 
 

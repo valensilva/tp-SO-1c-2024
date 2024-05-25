@@ -38,9 +38,9 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "error leyendo de consola\n");          
     }
     texto_separado = string_split(texto_por_consola, " ");
-    cod_op = texto_separado[0];
+    cod_op_kernel = texto_separado[0];
     path = texto_separado[1];    
-    if (strcmp(cod_op, "INICIAR_PROCESO") == 0){
+    if (strcmp(cod_op_kernel, "INICIAR_PROCESO") == 0){
         crearProceso(path, conexionKernelMemoria);
         /*
         if(esFIFO() == 1) planificarPorFIFO();
@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
         */
     }
     else {
-        printf("no funciona :c");
+        printf("operacion desconocida");
     }
     
     }  

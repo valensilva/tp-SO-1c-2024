@@ -19,7 +19,8 @@ typedef enum
 	RESPUESTA_HANDSHAKE,
 	PATHARCHIVO,
 	ENVIARPROCESO,
-	PCB_EXIT
+	PCB_EXIT,
+	INSTRUCCIONES
 }op_code;
 
 typedef struct
