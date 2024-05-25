@@ -75,7 +75,7 @@ void recibir_mensaje(int socket_cliente,t_log* logger)
 {
 	int size;
 	char* buffer = recibir_buffer(&size, socket_cliente);
-	log_info(logger, "Me llego el mensaje %s", buffer);
+	log_info(logger, "Me llego el path %s", buffer);
 	free(buffer);
 }
 
@@ -137,4 +137,12 @@ pcb* deserializar_pcb(void* buffer, int* desplazamiento){
 		*desplazamiento += sizeof(int);
 	}
 	return proceso;
+}
+void recibir_path(int socket_cliente,t_log* logger, char* path)
+{
+	int size;
+	char* buffer = recibir_buffer(&size, socket_cliente);
+	log_info(logger, "Me llego el path %s", buffer);
+	path = buffer;
+	free(buffer);
 }

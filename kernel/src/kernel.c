@@ -18,16 +18,19 @@ int main(int argc, char* argv[]) {
     //PARTE CLIENTE EMPIEZA
 
     //creo conexiones
+    /*
     conexionKernelCpuDispatch = crear_conexion(ipCpu, puertoCpuDispatch);
     conexionKernelCpuInterrupt = crear_conexion(ipCpu, puertoCpuInterrupt);
+    */
     conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
 
 
     //hago handshakes
     handshakeCliente(conexionKernelMemoria, loggerKernel);
-    handshakeCliente(conexionKernelCpuDispatch, loggerKernel);
+    /*
+    handshakeCliente(conexionKernelCpuDispatch, loggerKernel);   
     handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
-
+    */
     //INICIO CONSOLA
     while(1){ 
     printf("Ingrese codigo de operacion\n");
@@ -39,9 +42,10 @@ int main(int argc, char* argv[]) {
     path = texto_separado[1];    
     if (strcmp(cod_op, "INICIAR_PROCESO") == 0){
         crearProceso(path, conexionKernelMemoria);
+        /*
         if(esFIFO() == 1) planificarPorFIFO();
         else if(esRR() == 1) planificarPorRR();
-        
+        */
     }
     else {
         printf("no funciona :c");

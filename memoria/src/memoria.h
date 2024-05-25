@@ -30,5 +30,6 @@ void atender_kernel(void);
 void inicializarEstructurasMemoria(void);
 void iterator(char* value);
 void leer_archivo( const char*);
+char* pathArchivo;
 
 #endif /* MEMORIA_H_ */
