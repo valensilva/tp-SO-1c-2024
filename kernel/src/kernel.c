@@ -31,16 +31,21 @@ int main(int argc, char* argv[]) {
     //INICIO CONSOLA
     while(1){ 
     printf("Ingrese codigo de operacion\n");
-    scanf("%s", texto_por_consola);
+    if (fgets(texto_por_consola, sizeof(texto_por_consola), stdin) == NULL) {
+        fprintf(stderr, "error leyendo de consola\n");          
+    }
     texto_separado = string_split(texto_por_consola, " ");
     cod_op = texto_separado[0];
-    path = texto_separado[1];
+    path = texto_separado[1];    
     if (strcmp(cod_op, "INICIAR_PROCESO") == 0){
-        crearProceso(path, conexionKernelCpuDispatch, conexionKernelMemoria);
+        crearProceso(path, conexionKernelMemoria);
+        if(esFIFO()==1) planificarPorFIFO();
+        
     }
     else {
         printf("no funciona :c");
     }
+    
     }  
     //PARTE CLIENTE TERMINA 
 
@@ -65,6 +70,11 @@ void inicializarEstructurasKernel(void){
     //recursos ¿como implementar listas?
     //instancias recursos ¿como implementar listas?
     gradoMultiprogramacion = config_get_int_value(configKernel, "GRADO_MULTIPROGRAMACION");
+
+    //creacion de colas de procesos
+    colaNew = queue_create();
+    colaReady = queue_create();
+    colaExecute = queue_create();
 }
 
 void handshakeKernel(int fd_kernel,t_log* loggerKernel){
@@ -82,9 +92,80 @@ void handshakeKernel(int fd_kernel,t_log* loggerKernel){
     }
 }
 
-void crearProceso(char* path, int socket_cpu, int socket_memoria){
-    pcb proceso = {pidGeneral, 0, quantum,{0,0}, NEW};
+void crearProceso(char* path, int socket_memoria){
+    int confirmacion;
+    pcb* proceso = malloc(sizeof(pcb));
+    proceso->pid = pidGeneral;
+    proceso->program_counter = 0;
+    proceso->quantum = quantum;
+    proceso->estado = NEW;
+    proceso->registros[0] = 0; 
+    proceso->registros[1] = 0;
+    queue_push(colaNew, proceso);
     pidGeneral += 1;
-    enviar_pcb(&proceso, socket_cpu);
-    enviar_mensaje(path, socket_memoria);
+    
+    enviar_path(path, socket_memoria);
+    size_t bytes = recv(socket_memoria, &confirmacion, sizeof(int), 0);
+    if(bytes<0){
+        log_error(loggerKernel, "error al recibir confirmacion");
+        return;
+    }
+    if(confirmacion == 1 && procesosEnReady < gradoMultiprogramacion){
+        procesoAReady();    
+    } 
+
 }
+
+void procesoAReady(){
+    pcb* proceso = queue_pop(colaNew);
+    proceso->estado = READY;
+    queue_push(colaReady, proceso);
+    procesosEnReady++;
+}
+int esFIFO(){
+    if (strcmp(algoritmoPlanificacion, "FIFO") == 0){
+        return 1;
+    }
+    else return 0;
+}
+void planificarPorFIFO(){
+    while(1){
+        algoritmoFIFO(colaReady);
+        recibirPCBCPUFIFO();
+    }
+}
+void algoritmoFIFO(t_queue* cola){
+    pcb* proceso = queue_pop(cola);
+    proceso->estado = EXECUTE;
+    procesosEnReady--;
+    enviar_pcb(proceso, conexionKernelCpuDispatch);
+    free(proceso);
+}
+void recibirPCBCPUFIFO(){
+    op_code code_op = recibir_operacion(conexionKernelCpuDispatch);
+    switch(code_op){
+        case PCB_EXIT:
+            terminar_proceso(PCB_EXIT);
+            break;
+        default:
+            log_warning(loggerKernel, "operacion desconocida.");
+            break;
+    }
+}
+/*void planificarPorRR(){
+    while(1){
+
+    }
+}
+*/
+void terminar_proceso(op_code code_op){
+    pcb* proceso = recibir_pcb(conexionKernelCpuDispatch);
+    proceso->estado = EXIT;
+    t_paquete* paquete = crear_paquete(PCB_EXIT);
+    enviar_paquete(paquete, conexionKernelMemoria);
+    free(proceso);
+}
+/*void algoritmoRR(t_queue* cola){
+    pcb* proceso = queue_pop(cola);
+    proceso->estado = EXECUTE;
+}*/

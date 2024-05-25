@@ -10,24 +10,21 @@
 
 #define TRUE 1
 
+
 typedef enum{
     NEW,
     READY,
-    EXEC,
+    EXECUTE,
     BLOCKED,
     EXIT
-} EstadoProceso;
-typedef struct{
-    int registro1;
-    int registro2;
-} registros_CPU;
+}EstadoProceso;
 typedef struct
 {
     int pid;
     int program_counter;
     int quantum;
-    registros_CPU registros;
     EstadoProceso estado;
+    int registros[2];
 } pcb;
 
 extern int pidGeneral; //esto para que cada vez que creo un pcb nuevo voy actualizando el valor del 

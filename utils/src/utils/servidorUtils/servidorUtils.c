@@ -114,3 +114,27 @@ void handshakeServidor(int fd, t_log* logger){
         log_error(logger, "Error al recibir el handshake");
     }
 }
+pcb* recibir_pcb(int socket_cliente) {
+    int size;
+    int desplazamiento = 0;
+    void *buffer;
+
+    buffer = recibir_buffer(&size, socket_cliente);
+    pcb *proceso = deserializar_pcb(buffer, &desplazamiento);
+    free(buffer);
+    return proceso;
+}
+pcb* deserializar_pcb(void* buffer, int* desplazamiento){
+	pcb* proceso = malloc(sizeof(pcb));
+	memcpy(&(proceso->pid), buffer + *desplazamiento, sizeof(int));
+	*desplazamiento += sizeof(int);
+	memcpy(&(proceso->program_counter), buffer + *desplazamiento, sizeof(int));
+	*desplazamiento += sizeof(int);
+	memcpy(&(proceso->estado), buffer + *desplazamiento, sizeof(EstadoProceso));
+	desplazamiento += sizeof(EstadoProceso); 
+	for(int i=0; i<2; i++){
+		memcpy(&(proceso->registros[i]), buffer + *desplazamiento, sizeof(int));
+		*desplazamiento += sizeof(int);
+	}
+	return proceso;
+}

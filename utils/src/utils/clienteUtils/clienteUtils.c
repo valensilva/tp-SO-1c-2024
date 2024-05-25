@@ -61,7 +61,54 @@ void enviar_mensaje(char* mensaje, int socket_cliente)
 	free(a_enviar);
 	eliminar_paquete(paquete);
 }
+void enviar_path(char* path, int socket_cliente)
+{
+	if (path == NULL) {
+        fprintf(stderr, "Error: path es NULL\n");
+        return;
+    }
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	if (paquete == NULL) {
+        perror("Error al asignar memoria para paquete");
+        return;
+    }
 
+
+	paquete->codigo_operacion = PATHARCHIVO;
+	paquete->buffer = malloc(sizeof(t_buffer));
+	if (paquete->buffer == NULL) {
+        perror("Error al asignar memoria para paquete->buffer");
+        free(paquete);
+        return;
+    }
+	paquete->buffer->size = strlen(path) + 1;
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+	if (paquete->buffer->stream == NULL) {
+        perror("Error al asignar memoria para paquete->buffer->stream");
+        free(paquete->buffer);
+        free(paquete);
+        return;
+    }
+	memcpy(paquete->buffer->stream, path, paquete->buffer->size);
+
+	int bytes = paquete->buffer->size + 2*sizeof(int);
+
+	void* a_enviar = serializar_paquete(paquete, bytes);
+	if (a_enviar == NULL) {
+        fprintf(stderr, "Error al serializar el paquete\n");
+        free(paquete->buffer->stream);
+        free(paquete->buffer);
+        free(paquete);
+        return;
+    }
+
+	if (send(socket_cliente, a_enviar, bytes, 0) == -1) {
+        perror("Error al enviar el paquete");
+    }
+
+	free(a_enviar);
+	eliminar_paquete(paquete);
+}
 
 void crear_buffer(t_paquete* paquete)
 {
@@ -70,13 +117,14 @@ void crear_buffer(t_paquete* paquete)
 	paquete->buffer->stream = NULL;
 }
 
-t_paquete* crear_paquete(void)
+t_paquete* crear_paquete(op_code code_op)
 {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
-	paquete->codigo_operacion = PAQUETE;
+	paquete->codigo_operacion = code_op;
 	crear_buffer(paquete);
 	return paquete;
 }
+
 
 void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
 {
@@ -134,20 +182,19 @@ void handshakeCliente(int fd, t_log* logger) {
     }
 }
 void enviar_pcb(pcb* pcb_a_enviar, int socket_cliente){
-	t_paquete* paquete = crear_paquete();
+	t_paquete* paquete = crear_paquete(ENVIARPROCESO);
 	agregar_a_paquete(paquete, &(pcb_a_enviar->pid), sizeof(int));
-
     // Serializar el program_counter
     agregar_a_paquete(paquete, &(pcb_a_enviar->program_counter), sizeof(int));
 
     // Serializar el quantum
     agregar_a_paquete(paquete, &(pcb_a_enviar->quantum), sizeof(int));
-
-    // Serializar los registros
-    agregar_a_paquete(paquete, &(pcb_a_enviar->registros), sizeof(registros_CPU));
-
-    // Serializar el estado
-    agregar_a_paquete(paquete, &(pcb_a_enviar->estado), sizeof(EstadoProceso));
+	//serializar registros
+	for(int i=0; i<2; i++){
+		agregar_a_paquete(paquete, &(pcb_a_enviar->registros[i]), sizeof(int));
+	}
+	//serializar estado
+	agregar_a_paquete(paquete, &(pcb_a_enviar->estado), sizeof(EstadoProceso));
 
     // Enviar el paquete serializado a través del socket
     enviar_paquete(paquete, socket_cliente);

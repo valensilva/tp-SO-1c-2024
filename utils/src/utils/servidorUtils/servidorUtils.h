@@ -10,6 +10,7 @@
 #include<commons/collections/list.h>
 #include<string.h>
 #include<assert.h>
+#include <utils/utilsGenerales.h>
 
 //#define PUERTO "4444"
 
@@ -29,5 +30,7 @@ t_list* recibir_paquete(int);
 void recibir_mensaje(int socket_cliente,t_log* logger);
 int recibir_operacion(int);
 void handshakeServidor(int fd, t_log* logger);
+pcb* recibir_pcb(int socket_cliente);
+pcb* deserializar_pcb(void* buffer, int* desplazamiento);
 
 #endif /* UTILSSERVER_H_ */

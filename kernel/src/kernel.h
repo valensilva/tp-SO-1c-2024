@@ -7,6 +7,7 @@
 #include<commons/log.h>
 #include<commons/string.h>
 #include<commons/config.h>
+#include<commons/collections/queue.h>
 #include<readline/readline.h>
 //utils
 #include <utils/clienteUtils/clienteUtils.h>
@@ -34,6 +35,10 @@ int conexionKernelCpuInterrupt;
 int fd_kernel;
 int conexionEntradaSalida;
 int conexionKernelMemoria;
+int procesosEnReady;
+t_queue* colaNew;
+t_queue* colaReady;
+t_queue* colaExecute;
 
 
 
@@ -42,7 +47,14 @@ void leer_consola(t_log*);
 void paquete(int);
 void inicializarEstructurasKernel(void);
 void handshakeEntradaSalida(int, t_log*);
-void crearProceso(char* path, int socket_cpu, int socket_memoria);
+void crearProceso(char* path, int socket_memoria);
+void procesoAReady();
+void procesoAExecute();
+void enviarProcesoACpu(int conexion);
+void planificarPorFIFO();
+void algoritmoFIFO(t_queue* cola);
+void recibirPCBCPUFIFO();
+void terminar_proceso(op_code code_op);
 //void terminar_programa(t_log*, t_config*);
 
 
