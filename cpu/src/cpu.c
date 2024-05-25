@@ -1,5 +1,12 @@
 #include "cpu.h"
 
+uint8_t  registros_8[4]  = {AX, BX, CX, DX};
+uint32_t registros_32[7] = {EAX, EBX, ECX, EDX, SI, DI, PC};
+
+uint32_t obtener_valor_registro(char *registro);
+uint32_t obtener_valor_cod(char *str);
+uint32_t strtouint32(char *str);
+
 int main(int argc, char* argv[]) {
 
 	//inicializo estructuras cpu
@@ -52,8 +59,9 @@ void inicializarEstructurasCpu(void){
 }
 void atender_kernel_dispatch(void) {
 
-	t_list* lista;
+	pcb * pcb_recibido = NULL;
 	int seguir = 1;//seguir es para que si se desconecta el cliente no se termine el programa y poder salir del while
+	
 	while (seguir!=0) {
 		int cod_op = recibir_operacion(fd_kernel_dispatch);
 		switch (cod_op) {
@@ -61,9 +69,25 @@ void atender_kernel_dispatch(void) {
 			recibir_mensaje(fd_kernel_dispatch, loggerCpu);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(fd_kernel_dispatch);
+    		if( (pcb_recibido = malloc(sizeof(pcb))) == NULL) {
+				log_error(loggerCpu, "Error al asignar memoria");
+				seguir = 0;
+				break;
+			}
+			recibir_pcb(fd_kernel_dispatch,pcb_recibido);
 			log_info(loggerCpu, "Me llegaron los siguientes valores del kernel dispatch:\n");
-			list_iterate(lista, (void*) iterator);
+			log_info(loggerCpu, "pid: %d", pcb_recibido->pid);
+			log_info(loggerCpu, "Program Counter: %d", pcb_recibido->program_counter);
+            log_info(loggerCpu, "Quantum: %d", pcb_recibido->quantum);
+			log_info(loggerCpu, "State: %d", pcb_recibido->estado);
+			log_info(loggerCpu, "Registros: [ %d ][ %d ]", pcb_recibido->registros.registro1, pcb_recibido->registros.registro2);
+			
+			//pido instrucciones
+
+			//ejecuto ciclo de instruccion
+			ciclo_de_instruccion(pcb_recibido);
+
+			free(pcb_recibido);
 			break;
 		case -1:
 			seguir = 0;	
@@ -89,7 +113,6 @@ void atender_kernel_interrupt(void) {
 		case PAQUETE:
 			lista = recibir_paquete(fd_kernel_interrupt);
 			log_info(loggerCpu, "Me llegaron los siguientes valores del kernel interrupt:\n");
-			list_iterate(lista, (void*) iterator);
 			break;
 		case -1:
 			seguir = 0;	
@@ -103,6 +126,143 @@ void atender_kernel_interrupt(void) {
 	
 }
 
-void iterator(char* value) {
-	log_info(loggerCpu, "%s", value);
+
+
+void ciclo_de_instruccion(pcb* proceso_exec/*, t_list* instrucciones*/){
+
+	//fetch
+	uint32_t * parametros;
+	
+	//instruccion_t * proxima_instruccion = list_get(instrucciones, proceso_exec->program_counter);
+	char * instruccion = "SET AX 2"; 
+	char ** instruccion_separada = string_split(instruccion, " ");
+
+	//decode
+	uint32_t cod = obtener_valor_cod(instruccion_separada[0]);
+
+	//decode - execute
+	switch (cod)
+	{
+	case SET:
+
+		//decode de parametros
+		uint32_t reg1 = obtener_valor_registro(instruccion_separada[1]);
+		uint32_t valor = strtouint32(instruccion_separada[2]);
+
+		//execute
+		log_info(loggerCpu, "INSTRUCCION SET ");
+		if(reg1 < 4) {
+			registros_8[reg1] = (uint8_t)valor;
+			log_info(loggerCpu, "Valor de registros_8[%u] = %u", reg1, registros_8[reg1]);
+		} else {
+			registros_32[(reg1-4)] = valor;
+			log_info(loggerCpu, "Valor de registros_32[%u] = %u", reg1-4, registros_32[reg1-4]);
+		}
+		
+		registros_32[6] = ++(proceso_exec->program_counter);
+		break;
+
+	case SUM:
+		log_info(loggerCpu, "INSTRUCCION SUM");
+
+		reg1 = obtener_valor_registro(instruccion_separada[1]);
+		uint32_t reg2 = obtener_valor_registro(instruccion_separada[2]);
+
+		if(reg1 < 4) {
+			if(reg2 < 4) {
+				registros_8[reg1] = registros_8[reg1] + registros_8[reg2];
+				log_info(loggerCpu, "Valor de registros_8[%u] + = %u", reg1, registros_8[reg1]);
+			} else {
+				registros_8[reg1] = registros_8[reg1] + (uint8_t)registros_32[reg2-4];
+				log_info(loggerCpu, "Valor de registros_8[%u] + = %u", reg1, registros_8[reg1]);
+			}
+		} else {
+			if(reg2<4) {
+				registros_32[reg1-4] = registros_32[reg1-4] + registros_8[reg2];
+				log_info(loggerCpu, "Valor de registros_32[%u] + = %u", reg1-4, registros_32[reg1-4]);
+			} else {
+				registros_32[reg1-4] = registros_32[reg1-4] + registros_32[reg2-4];
+				log_info(loggerCpu, "Valor de registros_32[%u] + = %u", reg1-4, registros_32[reg1-4]);
+			}
+		}
+		registros_32[6] = ++(proceso_exec->program_counter);
+		break;
+
+	case JNZ:
+		log_info(loggerCpu, "INSTRUCCION JNZ");
+		reg1 = obtener_valor_registro(instruccion_separada[1]);
+		valor = strtouint32(instruccion_separada[2]);
+
+		if(reg1 < 4 && registros_8[reg1] != 0) {
+			registros_32[6] = valor;
+			log_info(loggerCpu, "Valor de PC = %u", registros_32[6]);
+		} else if(registros_32[reg1] != 0){
+			registros_32[6] = valor;
+			log_info(loggerCpu, "Valor de PC = %u", registros_32[6]);
+		}
+		break;
+
+	case SUB:
+		log_info(loggerCpu, "INSTRUCCION SUB");
+
+		reg1 = obtener_valor_registro(instruccion_separada[1]);
+		reg2 = obtener_valor_registro(instruccion_separada[2]);
+
+		if(reg1 < 4) {
+			if(reg2<4) {
+				registros_8[reg1] = registros_8[reg1] - registros_8[reg2];
+				log_info(loggerCpu, "Valor de registros_8[%u] + = %u", reg1, registros_8[reg1]);
+			} else {
+				registros_8[reg1] = registros_8[reg1] - (uint8_t)registros_32[reg2-4];
+				log_info(loggerCpu, "Valor de registros_8[%u] + = %u", reg1, registros_8[reg1]);
+			}
+		} else {
+			if(reg2<4) {
+				registros_32[reg1-4] = registros_32[reg1-4] - registros_8[reg2];
+				log_info(loggerCpu, "Valor de registros_32[%u] + = %u", reg1-4, registros_32[reg1-4]);
+			} else {
+				registros_32[reg1-4] = registros_32[reg1-4] - registros_32[reg2-4];
+				log_info(loggerCpu, "Valor de registros_32[%u] + = %u", reg1-4, registros_32[reg1-4]);
+			}
+		}
+		registros_32[6] = ++(proceso_exec->program_counter);
+
+		break;
+	case IO_GEN_SLEEP:
+		log_info(loggerCpu, "INSTRUCCION IO_GEN_SLEEP");
+		break;	
+	default:
+		break;
+	}
+
+	//chek_Interrupt
+
+}
+
+uint32_t obtener_valor_registro(char * registro) {
+	if (strcmp(registro, "AX") == 0) return REG_AX;
+    if (strcmp(registro, "BX") == 0) return REG_BX;
+    if (strcmp(registro, "CX") == 0) return REG_CX;
+    if (strcmp(registro, "DX") == 0) return REG_DX;
+    if (strcmp(registro, "EAX") == 0) return REG_EAX;
+    if (strcmp(registro, "EBX") == 0) return REG_EBX;
+    if (strcmp(registro, "ECX") == 0) return REG_ECX;
+    if (strcmp(registro, "EDX") == 0) return REG_EDX;
+    if (strcmp(registro, "SI") == 0) return REG_SI;
+    if (strcmp(registro, "DI") == 0) return REG_DI;
+    if (strcmp(registro, "PC") == 0) return REG_PC;
+}
+
+uint32_t obtener_valor_cod(char *str) {
+    if (strcmp(str, "SET") == 0) return SET;
+    if (strcmp(str, "SUM") == 0) return SUM;
+    if (strcmp(str, "SUB") == 0) return SUB;
+    if (strcmp(str, "JNZ") == 0) return JNZ;
+    if (strcmp(str, "IO_GEN_SLEEP") == 0) return IO_GEN_SLEEP;
+}
+
+uint32_t strtouint32(char *str) {
+    char *endptr;
+    unsigned long value = strtoul(str, &endptr, 10);
+    return (uint32_t)value;
 }

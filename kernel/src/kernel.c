@@ -1,8 +1,8 @@
 #include "kernel.h"
 
 int main(int argc, char* argv[]) {
-    char texto_por_consola[100];
-    char* cod_op;
+    char texto_por_consola[MAX_CONSOLA];
+    char* cod_op_kernel;
     char* path;
     char **texto_separado;
     //Inicio Estrucutras

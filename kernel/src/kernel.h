@@ -13,6 +13,7 @@
 #include <utils/clienteUtils/clienteUtils.h>
 #include <utils/servidorUtils/servidorUtils.h>
 #include <utils/utilsGenerales.h>
+#define MAX_CONSOLA 100
 
 
 //variables globales
