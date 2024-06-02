@@ -3,7 +3,7 @@
 int main(void){
     //Inicializo Estructuras E/S
     inicializarEstructurasEntradaSalida();
-
+    iniciar_semaforos();
     // Crear lista vacía
     lista = list_create();
 
@@ -156,3 +156,16 @@ void serializar_lista(t_list* lista, int socket_cliente, t_log* logger){
 	config_destroy(config);
 }
 */
+void iniciar_semaforos(void){
+
+	semaforoServidorMemoria = sem_open("semaforoServidorMemoria", O_CREAT, 0644, 0);
+	if(semaforoServidorMemoria == SEM_FAILED){
+		log_error(loggerEntradaSalida, "error en creacion de semaforo semaforoServidorMemoria");
+		exit(EXIT_FAILURE);
+	}
+    semaforoServidorKernel = sem_open("semaforoServidorKernel", O_CREAT, 0644, 0);
+	if(semaforoServidorKernel == SEM_FAILED){
+		log_error(loggerEntradaSalida, "error en creacion de semaforo semaforoServidorKernel");
+		exit(EXIT_FAILURE);
+	}
+}

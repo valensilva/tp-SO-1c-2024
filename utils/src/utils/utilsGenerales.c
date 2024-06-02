@@ -1,5 +1,9 @@
 #include <utils/utilsGenerales.h>
-
+sem_t* semaforoServidorCPUDispatch;
+sem_t* semaforoServidorCPUInterrupt;
+sem_t* semaforoServidorMemoria;
+sem_t* semaforoServidorIO;
+sem_t* semaforoServidorKernel;
 void decir_hola(char* quien) {
     printf("Hola desde %s!!\n", quien);
 }

@@ -30,6 +30,7 @@ void atender_cpu(void) ;
 void atender_IO(void) ;
 void atender_kernel(void);
 void inicializarEstructurasMemoria(void);
+void iniciar_semaforos(void);
 void iterator(char* value);
 void leer_archivo( const char*);
 void enviarInstruccion();

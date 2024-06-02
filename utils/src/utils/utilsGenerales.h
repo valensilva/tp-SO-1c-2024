@@ -9,9 +9,15 @@
 #include <pthread.h>
 #include <commons/collections/list.h>
 #include <errno.h>
+#include <semaphore.h>
+#include <fcntl.h>
 #define TRUE 1
 
-
+extern sem_t* semaforoServidorCPUDispatch;
+extern sem_t* semaforoServidorCPUInterrupt;
+extern sem_t* semaforoServidorMemoria;
+extern sem_t* semaforoServidorIO;
+extern sem_t* semaforoServidorKernel;
 typedef enum{
     NEW,
     READY,
