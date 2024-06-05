@@ -6,6 +6,7 @@ uint32_t registros_32[7] = {EAX, EBX, ECX, EDX, SI, DI, PC};
 uint32_t obtener_valor_registro(char *registro);
 uint32_t obtener_valor_cod(char *str);
 uint32_t strtouint32(char *str);
+char* recibir_instruccion(int fd_cpu, int numeroInstruccion);
 
 int main(int argc, char* argv[]) {
 
@@ -31,18 +32,18 @@ int main(int argc, char* argv[]) {
 	pthread_create(&thread_kernel_interrupt, NULL, (void*) atender_kernel_interrupt, NULL);
 	pthread_join(thread_kernel_interrupt, NULL);
 
-/*
+
 	//INICIA PARTE CLIENTE
 
     conexionCpuMemoria = crear_conexion(ipMemoria, puertoMemoria);
 	handshakeCliente(conexionCpuMemoria, loggerCpu);
 	// envio a la memoria el mensaje hola_memoria
-	enviar_mensaje("hola_memoria", conexionCpuMemoria);
+
+	//TERMINA PARTE CLIENTE
+
+	//termina programa -- NO COMENTAR -- se tiene que liberar la memoria
 	liberar_conexion(conexionCpuMemoria);
 	
-	//TERMINA PARTE CLIENTE
-*/
-	//termina programa -- NO COMENTAR -- se tiene que liberar la memoria
 	terminar_programa(loggerCpu, configCpu);
 
 	return 0;
@@ -74,13 +75,13 @@ void atender_kernel_dispatch(void) {
 				seguir = 0;
 				break;
 			}
-			recibir_pcb(fd_kernel_dispatch,pcb_recibido);
+			pcb_recibido = recibir_pcb(fd_kernel_dispatch);
 			log_info(loggerCpu, "Me llegaron los siguientes valores del kernel dispatch:\n");
 			log_info(loggerCpu, "pid: %d", pcb_recibido->pid);
 			log_info(loggerCpu, "Program Counter: %d", pcb_recibido->program_counter);
             log_info(loggerCpu, "Quantum: %d", pcb_recibido->quantum);
 			log_info(loggerCpu, "State: %d", pcb_recibido->estado);
-			log_info(loggerCpu, "Registros: [ %d ][ %d ]", pcb_recibido->registros.registro1, pcb_recibido->registros.registro2);
+			log_info(loggerCpu, "Registros: [ %d ][ %d ]", pcb_recibido->registros[0], pcb_recibido->registros[1]);
 			
 			//pido instrucciones
 
@@ -131,10 +132,10 @@ void atender_kernel_interrupt(void) {
 void ciclo_de_instruccion(pcb* proceso_exec/*, t_list* instrucciones*/){
 
 	//fetch
-	uint32_t * parametros;
+	char * instruccion = recibir_instruccion(fd_kernel_dispatch, proceso_exec->program_counter);
 	
 	//instruccion_t * proxima_instruccion = list_get(instrucciones, proceso_exec->program_counter);
-	char * instruccion = "SET AX 2"; 
+	//char * instruccion = "SET AX 2"; 
 	char ** instruccion_separada = string_split(instruccion, " ");
 
 	//decode
@@ -265,4 +266,34 @@ uint32_t strtouint32(char *str) {
     char *endptr;
     unsigned long value = strtoul(str, &endptr, 10);
     return (uint32_t)value;
+}
+
+char* recibir_instruccion(int fd_cpu, int numeroInstruccion) {
+    size_t bytes;
+    // Enviar el número de instrucción al servidor
+    bytes = send(fd_cpu, &numeroInstruccion, sizeof(int), 0);
+    if (bytes < 0) {
+        log_error(loggerCpu, "error al enviar número de instrucción");
+        return NULL;
+    }
+    
+    // Buffer para recibir la instrucción
+    char* instruccion = malloc(100);  // Ajustar el tamaño según se necesite
+    if (instruccion == NULL) {
+        log_error(loggerCpu, "error al alocar memoria para la instrucción");
+        return NULL;
+    }
+
+    // Recibir la instrucción
+    bytes = recv(fd_cpu, instruccion, 100, MSG_WAITALL);  // Ajustar tamaño según se necesite
+    if (bytes < 0) {
+        log_error(loggerCpu, "error al recibir la instrucción");
+        free(instruccion);
+        return NULL;
+    }
+
+    // Asegurarse de que la instrucción esté terminada en '\0'
+    instruccion[bytes] = '\0';
+
+    return instruccion;
 }

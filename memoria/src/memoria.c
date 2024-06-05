@@ -70,13 +70,14 @@ void atender_cpu(void) {
                 break;
             case PAQUETE:
                 lista = recibir_paquete(fd_cpu);
-                log_info(loggerMemoria, "Me llegaron los siguientes valores del cliente:\n");
+                log_info(loggerMemoria, "Me llegaron los siguientes valores del CPU:\n");
                 list_iterate(lista, (void*)iterator);
                 break;
             case INSTRUCCIONES:
+                log_info(loggerMemoria, "Solicitud de instrucciones de CPU:\n");
                 enviarInstruccion();
             case -1:
-                log_error(loggerMemoria, "El cliente se desconectó. Terminando hilo de conexión");
+                log_error(loggerMemoria, "El CPU se desconectó. Terminando hilo de conexión");
                 pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
             default:
                 log_warning(loggerMemoria, "Operación desconocida.");
@@ -101,11 +102,11 @@ void atender_IO(void) {
                 break;
             case PAQUETE:
                 lista = recibir_paquete(fd_IO);
-                log_info(loggerMemoria, "Me llegaron los siguientes valores del cliente:\n");
+                log_info(loggerMemoria, "Me llegaron los siguientes valores del I/O:\n");
                 list_iterate(lista, (void*)iterator);
                 break;
             case -1:
-                log_error(loggerMemoria, "El cliente se desconectó. Terminando hilo de conexión");
+                log_error(loggerMemoria, "El I/O se desconectó. Terminando hilo de conexión");
                 pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
             default:
                 log_warning(loggerMemoria, "Operación desconocida.");
@@ -130,7 +131,7 @@ void atender_kernel(void) {
                 break;
             case PAQUETE:
                 lista = recibir_paquete(fd_kernel);
-                log_info(loggerMemoria, "Me llegaron los siguientes valores del cliente:\n");
+                log_info(loggerMemoria, "Me llegaron los siguientes valores del kernel:\n");
                 list_iterate(lista, (void*)iterator);
                 break;
             case PATHARCHIVO:
@@ -138,7 +139,7 @@ void atender_kernel(void) {
                 leer_archivo(pathArchivo);
                 break;
             case -1:
-                log_error(loggerMemoria, "El cliente se desconectó. Terminando hilo de conexión");
+                log_error(loggerMemoria, "El kernel se desconectó. Terminando hilo de conexión");
                 pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
             default:
                 log_warning(loggerMemoria, "Operación desconocida.");
@@ -153,7 +154,7 @@ void leer_archivo(const char* file) {
     int contador = 0;
     int confirmacion;
     char buffer[100]; // Define un buffer para almacenar una línea del archivo
-    FILE *pseudocodigo = fopen(file, "r");
+    FILE *pseudocodigo = fopen(file, "rt");
 
     if (pseudocodigo != NULL) {
         listaInstrucciones = list_create();
@@ -178,6 +179,7 @@ void leer_archivo(const char* file) {
         exit(1);
     }
 }
+
 void enviarInstruccion(){
     int numeroDeInstruccion;
     size_t bytes;
@@ -190,3 +192,4 @@ void enviarInstruccion(){
     bytes = send(fd_cpu, instruccion, strlen(instruccion) + 1, 0);
     if(bytes<0) log_error(loggerMemoria, "error al enviar la instruccion");
 }
+

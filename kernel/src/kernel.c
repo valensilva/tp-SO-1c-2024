@@ -37,9 +37,12 @@ int main(int argc, char* argv[]) {
     if (fgets(texto_por_consola, sizeof(texto_por_consola), stdin) == NULL) {
         fprintf(stderr, "error leyendo de consola\n");          
     }
+    texto_por_consola[strlen(texto_por_consola)-1] = '\0';
     texto_separado = string_split(texto_por_consola, " ");
+    
     cod_op_kernel = texto_separado[0];
-    path = texto_separado[1];    
+    path = texto_separado[1];
+    puts(path);
     if (strcmp(cod_op_kernel, "INICIAR_PROCESO") == 0){
         crearProceso(path, conexionKernelMemoria);
         /*
