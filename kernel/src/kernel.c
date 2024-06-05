@@ -7,30 +7,34 @@ int main(int argc, char* argv[]) {
     char **texto_separado;
     //Inicio Estrucutras
     inicializarEstructurasKernel();
-  /* //COMIENZO PARTE SERVIDOR
+    iniciar_semaforos();
+    //COMIENZO PARTE SERVIDOR
     //Socket
     fd_kernel = iniciar_servidor(puertoEscuchaKernel, loggerKernel, "Kernel listo para recibir conexiones");
+    sem_post(semaforoServidorKernel);
     
     //Espera de conexion E/S
-    conexionEntradaSalida = esperar_cliente(fd_kernel, loggerKernel, "E/S conectado");   
+    pthread_t hilo_conexion_IO;
+    pthread_create(&hilo_conexion_IO, NULL, (void*) atender_IO, NULL);
+    pthread_detach(hilo_conexion_IO);  
     //  TERMINA PARTE SERVIDOR 
-*/
+
     //PARTE CLIENTE EMPIEZA
 
     //creo conexiones
-    /*
+    
+    sem_wait(semaforoServidorCPUDispatch);
     conexionKernelCpuDispatch = crear_conexion(ipCpu, puertoCpuDispatch);
+    sem_wait(semaforoServidorCPUInterrupt);
     conexionKernelCpuInterrupt = crear_conexion(ipCpu, puertoCpuInterrupt);
-    */
+    sem_wait(semaforoServidorMemoria);
     conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
 
-
     //hago handshakes
-    handshakeCliente(conexionKernelMemoria, loggerKernel);
-    /*
+    handshakeCliente(conexionKernelMemoria, loggerKernel);   
     handshakeCliente(conexionKernelCpuDispatch, loggerKernel);   
     handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
-    */
+    
     //INICIO CONSOLA
     while(1){ 
     printf("Ingrese codigo de operacion\n");
@@ -205,4 +209,53 @@ void esperarQuantum(){
     usleep(quantum);
     int interrupcion = 1;
     send(conexionKernelCpuInterrupt, &interrupcion, sizeof(int), 0);
+}
+void iniciar_semaforos(void){
+	semaforoServidorCPUDispatch = sem_open("semaforoServidorCPUDispatch", O_CREAT, 0644, 0);
+	if(semaforoServidorCPUDispatch == SEM_FAILED){
+		log_error(loggerKernel, "error en creacion de semaforo semaforoServidorCPUDispatch");
+		exit(EXIT_FAILURE);
+	}
+	semaforoServidorCPUInterrupt = sem_open("semaforoSeridorCPUInterrupt", O_CREAT, 0644, 0);
+	if(semaforoServidorCPUDispatch == SEM_FAILED){
+		log_error(loggerKernel, "error en creacion de semaforo semaforoServidorCPUInterrupt");
+		exit(EXIT_FAILURE);
+	}
+	semaforoServidorMemoria = sem_open("semaforoServidorMemoria", O_CREAT, 0644, 0);
+	if(semaforoServidorMemoria == SEM_FAILED){
+		log_error(loggerKernel, "error en creacion de semaforo semaforoServidorMemoria");
+		exit(EXIT_FAILURE);
+	}
+    semaforoServidorKernel = sem_open("semaforoServidorKernel", O_CREAT, 0644, 0);
+	if(semaforoServidorKernel == SEM_FAILED){
+		log_error(loggerKernel, "error en creacion de semaforo semaforoServidorKernel");
+		exit(EXIT_FAILURE);
+	}
+}
+void atender_IO(void){
+    
+    t_list* lista;
+    conexionEntradaSalida = esperar_cliente(fd_kernel, loggerKernel, "E/S conectado"); 
+    while (TRUE) {
+        int cod_op = recibir_operacion(conexionEntradaSalida);
+        switch (cod_op) {
+            case MENSAJE:
+                recibir_mensaje(conexionEntradaSalida, loggerKernel);
+                break;
+            case PAQUETE:
+                lista = recibir_paquete(conexionEntradaSalida);
+                log_info(loggerKernel, "Me llegaron los siguientes valores del cliente:\n");
+                list_iterate(lista, (void*)iterator);
+                break;
+            case -1:
+                log_error(loggerKernel, "El cliente se desconectó. Terminando hilo de conexión");
+                pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
+            default:
+                log_warning(loggerKernel, "Operación desconocida.");
+                break;
+        }
+    }
+}
+void iterator(char* value) {
+	log_info(loggerKernel, "%s", value);
 }

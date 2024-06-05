@@ -51,6 +51,7 @@ int fd_kernel_interrupt;
 void leer_consola(t_log*);
 void paquete(int);
 void inicializarEstructurasCpu(void);
+void iniciar_semaforos(void);
 void terminar_programa(t_log*, t_config*);
 void atender_kernel_dispatch(void);
 void atender_kernel_interrupt(void);

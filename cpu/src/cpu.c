@@ -12,17 +12,15 @@ int main(int argc, char* argv[]) {
 
 	//inicializo estructuras cpu
 	inicializarEstructurasCpu();
-
+	iniciar_semaforos();
 	//INICIA SERVIDOR CPU
 
 	//incio servidores
 	fd_cpu_dispatch = iniciar_servidor(puertoEscuchaDispatch, loggerCpu, "cpu dispatch lista para recibir conexiones");
+	sem_post(semaforoServidorCPUDispatch);
 	fd_cpu_interrupt = iniciar_servidor(puertoEscuchaInterrupt, loggerCpu, "cpu interrupt lista para recibir conexiones");
-
-	//imicio esperas con kernel
-	fd_kernel_dispatch = esperar_cliente(fd_cpu_dispatch, loggerCpu, "kernel dispatch conectado");
-	fd_kernel_interrupt = esperar_cliente(fd_cpu_interrupt, loggerCpu, "kernel interrupt conectado");
-
+	sem_post(semaforoServidorCPUInterrupt);
+	
 	//atiendo kernel dispatch
 	pthread_t thread_kernel_dispatch;
 	pthread_create(&thread_kernel_dispatch, NULL, (void*) atender_kernel_dispatch, NULL);
@@ -34,7 +32,7 @@ int main(int argc, char* argv[]) {
 
 
 	//INICIA PARTE CLIENTE
-
+	sem_wait(semaforoServidorMemoria);
     conexionCpuMemoria = crear_conexion(ipMemoria, puertoMemoria);
 	handshakeCliente(conexionCpuMemoria, loggerCpu);
 	// envio a la memoria el mensaje hola_memoria
@@ -59,7 +57,7 @@ void inicializarEstructurasCpu(void){
 	algoritmoTLB = config_get_string_value(configCpu, "ALGORITMO_TLB");
 }
 void atender_kernel_dispatch(void) {
-
+	fd_kernel_dispatch = esperar_cliente(fd_cpu_dispatch, loggerCpu, "kernel dispatch conectado");
 	pcb * pcb_recibido = NULL;
 	int seguir = 1;//seguir es para que si se desconecta el cliente no se termine el programa y poder salir del while
 	
@@ -102,7 +100,7 @@ void atender_kernel_dispatch(void) {
 }
 
 void atender_kernel_interrupt(void) {
-
+	fd_kernel_interrupt = esperar_cliente(fd_cpu_interrupt, loggerCpu, "kernel interrupt conectado");
 	t_list* lista;
 	int seguir = 1;
 	while (seguir!=0) {	
@@ -296,4 +294,21 @@ char* recibir_instruccion(int fd_cpu, int numeroInstruccion) {
     instruccion[bytes] = '\0';
 
     return instruccion;
+}
+void iniciar_semaforos(void){
+	semaforoServidorCPUDispatch = sem_open("semaforoServidorCPUDispatch", O_CREAT, 0644, 0);
+	if(semaforoServidorCPUDispatch == SEM_FAILED){
+		log_error(loggerCpu, "error en creacion de semaforo semaforoServidorCPUDispatch");
+		exit(EXIT_FAILURE);
+	}
+	semaforoServidorCPUInterrupt = sem_open("semaforoSeridorCPUInterrupt", O_CREAT, 0644, 0);
+	if(semaforoServidorCPUDispatch == SEM_FAILED){
+		log_error(loggerCpu, "error en creacion de semaforo semaforoServidorCPUInterrupt");
+		exit(EXIT_FAILURE);
+	}
+	semaforoServidorMemoria = sem_open("semaforoServidorMemoria", O_CREAT, 0644, 0);
+	if(semaforoServidorMemoria == SEM_FAILED){
+		log_error(loggerCpu, "error en creacion de semaforo semaforoServidorMemoria");
+		exit(EXIT_FAILURE);
+	}
 }

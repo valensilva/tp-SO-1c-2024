@@ -47,6 +47,7 @@ pthread_t hiloContadorQuantum;
 void leer_consola(t_log*);
 void paquete(int);
 void inicializarEstructurasKernel(void);
+void iniciar_semaforos(void);
 void handshakeEntradaSalida(int, t_log*);
 void crearProceso(char* path, int socket_memoria);
 void procesoAReady();
@@ -63,6 +64,8 @@ void terminar_proceso(op_code code_op);
 int esRR();
 int esFIFO();
 void planificarPorRR();
+void atender_IO(void);
+void iterator(char* value);
 //void terminar_programa(t_log*, t_config*);
 
 

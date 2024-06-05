@@ -90,6 +90,7 @@ void serializar_lista(t_list*, int socket_cliente, t_log*);
 void leer_consola(t_log*);
 void paquete(int);
 void inicializarEstructurasEntradaSalida(void);
+void iniciar_semaforos(void);
 void io_gen_sleep(char*, int, t_log*);
 
 //void terminar_programa(t_log*, t_config*);

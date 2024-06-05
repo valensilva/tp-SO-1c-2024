@@ -4,15 +4,11 @@ int main(int argc, char* argv[]) {
 	
     //estructuras
 	inicializarEstructurasMemoria();
-
+    iniciar_semaforos();
     
 	//inicializo servidor
 	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
-    /*
-    fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
-    fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "I/O conectado");
-    */
-    fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "kernel conectado");
+    sem_post(semaforoServidorMemoria);
     
     //inicio espera con la cpu
 	pthread_t hilo_cpu;
@@ -29,10 +25,6 @@ int main(int argc, char* argv[]) {
 	pthread_t hilo_kernel;
     pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
     pthread_join(hilo_kernel, NULL);
-
-
-
-    //leer_archivo(pathArchivo);
 
 	int i=0;
 	while  (i < list_size(listaInstrucciones)){
@@ -59,7 +51,7 @@ void inicializarEstructurasMemoria(void){
 }
 
 void atender_cpu(void) {
-    
+    fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
     t_list* lista;
 
     while (TRUE) {
@@ -91,7 +83,7 @@ void atender_cpu(void) {
 
 
 void atender_IO(void) {
-    
+    fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "I/O conectado");
     t_list* lista;
 
     while (TRUE) {
@@ -120,7 +112,7 @@ void iterator(char* value) {
 	log_info(loggerMemoria, "%s", value);
 }
 void atender_kernel(void) {
-    
+    fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "kernel conectado");
     t_list* lista;
 
     while (TRUE) {
@@ -192,4 +184,11 @@ void enviarInstruccion(){
     bytes = send(fd_cpu, instruccion, strlen(instruccion) + 1, 0);
     if(bytes<0) log_error(loggerMemoria, "error al enviar la instruccion");
 }
+void iniciar_semaforos(void){
 
+	semaforoServidorMemoria = sem_open("semaforoServidorMemoria", O_CREAT, 0644, 0);
+	if(semaforoServidorMemoria == SEM_FAILED){
+		log_error(loggerMemoria, "error en creacion de semaforo semaforoServidorMemoria");
+		exit(EXIT_FAILURE);
+	}
+}
