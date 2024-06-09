@@ -25,16 +25,16 @@ int main(void){
     //serializar_lista(lista, fd_es, loggerEntradaSalida);
 
     //Conexion E/S - Memoria
-    fd_esMem = crear_conexion(ipMemoria, puertoMemoria);
+    //fd_esMem = crear_conexion(ipMemoria, puertoMemoria);
 
     //Handshake
-    handshakeCliente(fd_esMem, loggerEntradaSalida);
+    //handshakeCliente(fd_esMem, loggerEntradaSalida);
   
     //liberar_conexion(fd_es);
-    liberar_conexion(fd_esMem);
+    //liberar_conexion(fd_esMem);
 
     //Terminar programa
-    //terminar_programa(loggerEntradaSalida, configEntradaSalida);
+    terminar_programa(loggerEntradaSalida, configEntradaSalida);
 }
 
 

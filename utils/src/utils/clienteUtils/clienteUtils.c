@@ -162,7 +162,7 @@ void handshakeCliente(int fd, t_log* logger) {
     size_t bytes;
     int32_t handshake = 1;
     int32_t result;
-
+	
     bytes = send(fd, &handshake, sizeof(int32_t), 0);
     if (bytes < 0) {
         log_error(logger, "Error al enviar el mensaje de handshake");

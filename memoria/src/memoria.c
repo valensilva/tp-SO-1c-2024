@@ -10,16 +10,16 @@ int main(int argc, char* argv[]) {
 	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
     sem_post(semaforoServidorMemoria);
     
-    //inicio espera con la cpu
-	pthread_t hilo_cpu;
-    pthread_create(&hilo_cpu, NULL,(void*) atender_cpu, NULL);
-    pthread_detach(hilo_cpu);
-
 	//inicio espera con la Interfaz I/O
 	pthread_t hilo_IO;
     pthread_create(&hilo_IO, NULL,(void*) atender_IO , NULL);
     pthread_detach(hilo_IO);
     
+
+    //inicio espera con la cpu
+	pthread_t hilo_cpu;
+    pthread_create(&hilo_cpu, NULL,(void*) atender_cpu, NULL);
+    pthread_detach(hilo_cpu);
 
 	//incio espera con kernel 
 	pthread_t hilo_kernel;
@@ -67,23 +67,22 @@ void atender_cpu(void) {
                 break;
             case INSTRUCCIONES:
                 log_info(loggerMemoria, "Solicitud de instrucciones de CPU:\n");
+
                 enviarInstruccion();
+                break;
             case -1:
                 log_error(loggerMemoria, "El CPU se desconectó. Terminando hilo de conexión");
                 pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
             default:
-                log_warning(loggerMemoria, "Operación desconocida.");
+                log_warning(loggerMemoria, "Operación desconocida desde CPU.");
                 break;
         }
     }
 }
 
 
-	
-
-
 void atender_IO(void) {
-    fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "I/O conectado");
+    //fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "I/O conectado");
     t_list* lista;
 
     while (TRUE) {
@@ -101,7 +100,7 @@ void atender_IO(void) {
                 log_error(loggerMemoria, "El I/O se desconectó. Terminando hilo de conexión");
                 pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
             default:
-                log_warning(loggerMemoria, "Operación desconocida.");
+                log_warning(loggerMemoria, "Operación desconocida desde I/O.");
                 break;
         }
     }
@@ -134,13 +133,11 @@ void atender_kernel(void) {
                 log_error(loggerMemoria, "El kernel se desconectó. Terminando hilo de conexión");
                 pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
             default:
-                log_warning(loggerMemoria, "Operación desconocida.");
+                log_warning(loggerMemoria, "Operación desconocida desde kernel.");
                 break;
         }
     }
 }
-
-
 
 void leer_archivo(const char* file) {
     int contador = 0;
@@ -162,6 +159,7 @@ void leer_archivo(const char* file) {
             list_add_in_index(listaInstrucciones, contador, instruccion);
             contador++;
         }
+        log_info(loggerMemoria, "lista de instrucciones creada con exito");
         confirmacion = 1;
         size_t bytes = send(fd_cpu, &confirmacion, sizeof(int), 0);
         fclose(pseudocodigo);
@@ -184,6 +182,7 @@ void enviarInstruccion(){
     bytes = send(fd_cpu, instruccion, strlen(instruccion) + 1, 0);
     if(bytes<0) log_error(loggerMemoria, "error al enviar la instruccion");
 }
+
 void iniciar_semaforos(void){
 
 	semaforoServidorMemoria = sem_open("semaforoServidorMemoria", O_CREAT, 0644, 0);
@@ -191,4 +190,53 @@ void iniciar_semaforos(void){
 		log_error(loggerMemoria, "error en creacion de semaforo semaforoServidorMemoria");
 		exit(EXIT_FAILURE);
 	}
+}
+
+void enviar_instruccion(char* instruccion, int socket_cliente)
+{
+	if (instruccion == NULL) {
+        fprintf(stderr, "Error: instruccion es NULL\n");
+        return;
+    }
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	if (paquete == NULL) {
+        perror("Error al asignar memoria para paquete");
+        return;
+    }
+
+
+	paquete->codigo_operacion = PATHARCHIVO;
+	paquete->buffer = malloc(sizeof(t_buffer));
+	if (paquete->buffer == NULL) {
+        perror("Error al asignar memoria para paquete->buffer");
+        free(paquete);
+        return;
+    }
+	paquete->buffer->size = strlen(instruccion) + 1;
+	paquete->buffer->stream = malloc(paquete->buffer->size);
+	if (paquete->buffer->stream == NULL) {
+        perror("Error al asignar memoria para paquete->buffer->stream");
+        free(paquete->buffer);
+        free(paquete);
+        return;
+    }
+	memcpy(paquete->buffer->stream, instruccion, paquete->buffer->size);
+
+	int bytes = paquete->buffer->size + 2*sizeof(int);
+
+	void* a_enviar = serializar_paquete(paquete, bytes);
+	if (a_enviar == NULL) {
+        fprintf(stderr, "Error al serializar el paquete\n");
+        free(paquete->buffer->stream);
+        free(paquete->buffer);
+        free(paquete);
+        return;
+    }
+
+	if (send(socket_cliente, a_enviar, bytes, 0) == -1) {
+        perror("Error al enviar el paquete");
+    }
+
+	free(a_enviar);
+	eliminar_paquete(paquete);
 }

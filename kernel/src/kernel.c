@@ -37,27 +37,27 @@ int main(int argc, char* argv[]) {
     
     //INICIO CONSOLA
     while(1){ 
-    printf("Ingrese codigo de operacion\n");
-    if (fgets(texto_por_consola, sizeof(texto_por_consola), stdin) == NULL) {
-        fprintf(stderr, "error leyendo de consola\n");          
-    }
-    texto_por_consola[strlen(texto_por_consola)-1] = '\0';
-    texto_separado = string_split(texto_por_consola, " ");
-    
-    cod_op_kernel = texto_separado[0];
-    path = texto_separado[1];
-    puts(path);
-    if (strcmp(cod_op_kernel, "INICIAR_PROCESO") == 0){
-        crearProceso(path, conexionKernelMemoria);
-        /*
-        if(esFIFO() == 1) planificarPorFIFO();
-        else if(esRR() == 1) planificarPorRR();
-        */
-    }
-    else {
-        printf("operacion desconocida");
-    }
-    
+        printf("Ingrese codigo de operacion\n");
+        if (fgets(texto_por_consola, sizeof(texto_por_consola), stdin) == NULL) {
+            fprintf(stderr, "error leyendo de consola\n");          
+        }
+        texto_por_consola[strlen(texto_por_consola)-1] = '\0';
+        texto_separado = string_split(texto_por_consola, " ");
+        
+        cod_op_kernel = texto_separado[0];
+        path = texto_separado[1];
+        puts(path);
+        if (strcmp(cod_op_kernel, "INICIAR_PROCESO") == 0){
+            crearProceso(path, conexionKernelMemoria);
+            /*
+            if(esFIFO() == 1) planificarPorFIFO();
+            else if(esRR() == 1) planificarPorRR();
+            */
+        }
+        else {
+            printf("operacion desconocida");
+        }
+        
     }  
     //PARTE CLIENTE TERMINA 
 
@@ -122,6 +122,7 @@ void crearProceso(char* path, int socket_memoria){
         log_error(loggerKernel, "error al recibir confirmacion");
         return;
     }
+    log_info(loggerKernel,"Path recibido por memoria con exito: agregando proceso a lista de ready");
     if(confirmacion == 1 && procesosEnReady < gradoMultiprogramacion){
         procesoAReady();    
     } 
