@@ -10,29 +10,23 @@ int main(int argc, char* argv[]) {
 	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
     sem_post(semaforoServidorMemoria);
     
-	//inicio espera con la Interfaz I/O
-	pthread_t hilo_IO;
-    pthread_create(&hilo_IO, NULL,(void*) atender_IO , NULL);
-    pthread_detach(hilo_IO);
-    
-
+    //incio espera con kernel 
+	pthread_t hilo_kernel;
+    pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
+    pthread_detach(hilo_kernel);
+	
     //inicio espera con la cpu
 	pthread_t hilo_cpu;
     pthread_create(&hilo_cpu, NULL,(void*) atender_cpu, NULL);
     pthread_detach(hilo_cpu);
 
-	//incio espera con kernel 
-	pthread_t hilo_kernel;
-    pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
-    pthread_join(hilo_kernel, NULL);
-
-	int i=0;
-	while  (i < list_size(listaInstrucciones)){
-        char*a= list_get(listaInstrucciones, i);
-        printf("%s\n", a );
-        i++;
+    //inicio espera con la Interfaz I/O
+	pthread_t hilo_IO;
+    pthread_create(&hilo_IO, NULL,(void*) atender_IO , NULL);
+    pthread_join(hilo_IO, NULL);
+    while(1){
+        sleep(1);
     }
-
 	config_destroy(configMemoria);
 	log_destroy(loggerMemoria);
 
@@ -67,7 +61,6 @@ void atender_cpu(void) {
                 break;
             case INSTRUCCIONES:
                 log_info(loggerMemoria, "Solicitud de instrucciones de CPU:\n");
-
                 enviarInstruccion();
                 break;
             case -1:
@@ -170,17 +163,33 @@ void leer_archivo(const char* file) {
     }
 }
 
-void enviarInstruccion(){
+void enviarInstruccion() {
     int numeroDeInstruccion;
     size_t bytes;
+
+    // Recibir número de instrucción
     bytes = recv(fd_cpu, &numeroDeInstruccion, sizeof(int), MSG_WAITALL);
-    if(bytes<0){
-        log_error(loggerMemoria, "error al recibir número de instruccion");
+    if (bytes <= 0) {
+        log_error(loggerMemoria, "Error al recibir número de instrucción");
         return;
     }
+    log_info(loggerMemoria, "Número de instrucción recibido: %d", numeroDeInstruccion);
+
+    // Obtener la instrucción de la lista
     char* instruccion = list_get(listaInstrucciones, numeroDeInstruccion);
+    if (instruccion == NULL) {
+        log_error(loggerMemoria, "Instrucción no encontrada para el índice: %d", numeroDeInstruccion);
+        return;
+    }
+    log_info(loggerMemoria, "Instrucción obtenida: %s", instruccion);
+
+    // Enviar instrucción al CPU
     bytes = send(fd_cpu, instruccion, strlen(instruccion) + 1, 0);
-    if(bytes<0) log_error(loggerMemoria, "error al enviar la instruccion");
+    if (bytes <= 0) {
+        log_error(loggerMemoria, "Error al enviar la instrucción");
+    } else {
+        log_info(loggerMemoria, "Instrucción enviada con éxito");
+    }
 }
 
 void iniciar_semaforos(void){

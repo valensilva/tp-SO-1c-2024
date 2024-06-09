@@ -6,15 +6,16 @@ uint32_t registros_32[7] = {EAX, EBX, ECX, EDX, SI, DI, PC};
 uint32_t obtener_valor_registro(char *registro);
 uint32_t obtener_valor_cod(char *str);
 uint32_t strtouint32(char *str);
-void recibir_instruccion(int numInstruccion, int socket_cliente, t_log* logger, char** instruccion);
+
 
 int main(int argc, char* argv[]) {
 
 	//inicializo estructuras cpu
 	inicializarEstructurasCpu();
 	iniciar_semaforos();
+	log_info(loggerCpu, "Estructuras inicializadas y semáforos iniciados");
 	//INICIA SERVIDOR CPU
-
+/*
 	//incio servidores
 	fd_cpu_dispatch = iniciar_servidor(puertoEscuchaDispatch, loggerCpu, "cpu dispatch lista para recibir conexiones");
 	sem_post(semaforoServidorCPUDispatch);
@@ -30,15 +31,21 @@ int main(int argc, char* argv[]) {
 	pthread_create(&thread_kernel_interrupt, NULL, (void*) atender_kernel_interrupt, NULL);
 	pthread_join(thread_kernel_interrupt, NULL);
 
-
+*/
 	//INICIA PARTE CLIENTE
 	sem_wait(semaforoServidorMemoria);
+	log_info(loggerCpu, "Semáforo de servidor de memoria esperado");
     conexionCpuMemoria = crear_conexion(ipMemoria, puertoMemoria);
+    if (conexionCpuMemoria == -1) {
+        log_error(loggerCpu, "Error al crear conexión con la memoria");
+        return 1;
+    }
+    log_info(loggerCpu, "Conexión establecida con la memoria");
 	handshakeCliente(conexionCpuMemoria, loggerCpu);
 	// envio a la memoria el mensaje hola_memoria
 
-	char * instruccion;
-	recibir_instruccion(2,conexionCpuMemoria,loggerCpu,&instruccion);
+	char instruccion[1024] = {0};
+	solicitar_instruccion(0, conexionCpuMemoria);
 	log_info(loggerCpu, "Recibi la instruccion: %s", instruccion);
 	//TERMINA PARTE CLIENTE
 
@@ -134,7 +141,7 @@ void ciclo_de_instruccion(pcb* proceso_exec/*, t_list* instrucciones*/){
 
 	char * instruccion;
 	//fetch
-	recibir_instruccion(proceso_exec->program_counter, conexionCpuMemoria,loggerCpu, &instruccion);
+	//recibir_instruccion(proceso_exec->program_counter, conexionCpuMemoria,loggerCpu, &instruccion);
 	
 	//instruccion_t * proxima_instruccion = list_get(instrucciones, proceso_exec->program_counter);
 	//char * instruccion = "SET AX 2"; 
@@ -254,6 +261,7 @@ uint32_t obtener_valor_registro(char * registro) {
     if (strcmp(registro, "SI") == 0) return REG_SI;
     if (strcmp(registro, "DI") == 0) return REG_DI;
     if (strcmp(registro, "PC") == 0) return REG_PC;
+	else return 0;
 }
 
 uint32_t obtener_valor_cod(char *str) {
@@ -262,6 +270,7 @@ uint32_t obtener_valor_cod(char *str) {
     if (strcmp(str, "SUB") == 0) return SUB;
     if (strcmp(str, "JNZ") == 0) return JNZ;
     if (strcmp(str, "IO_GEN_SLEEP") == 0) return IO_GEN_SLEEP;
+	else return 0;
 }
 
 uint32_t strtouint32(char *str) {
@@ -288,33 +297,39 @@ void iniciar_semaforos(void){
 	}
 }
 
-void solicitar_instruccion(int instruccion, int socket_cliente)
-{
-	t_paquete* paquete = malloc(sizeof(t_paquete));
+void solicitar_instruccion(int instruccion, int socket_cliente) {
+    t_paquete* paquete = malloc(sizeof(t_paquete));
 
-	paquete->codigo_operacion = INSTRUCCIONES;
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = sizeof(int);
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-	memcpy(paquete->buffer->stream, instruccion, paquete->buffer->size);
+    paquete->codigo_operacion = INSTRUCCIONES;
+    paquete->buffer = malloc(sizeof(t_buffer));
+    paquete->buffer->size = sizeof(int);
+    paquete->buffer->stream = malloc(paquete->buffer->size);
+    memcpy(paquete->buffer->stream, &instruccion, paquete->buffer->size); 
 
-	int bytes = paquete->buffer->size + 2*sizeof(int);
+    int bytes = paquete->buffer->size + 2*sizeof(int);
 
-	void* a_enviar = serializar_paquete(paquete, bytes);
+    void* a_enviar = serializar_paquete(paquete, bytes);
 
-	send(socket_cliente, a_enviar, bytes, 0);
-	log_info(loggerCpu, "Instruccion SOlicitada");
+    send(socket_cliente, a_enviar, bytes, 0);
+    log_info(loggerCpu, "Instrucción solicitada");
 
-	free(a_enviar);
-	eliminar_paquete(paquete);
+    free(a_enviar);
+    eliminar_paquete(paquete);
+
+    // Esperar y recibir la instrucción de la memoria
+    recibir_instruccion(socket_cliente);
 }
 
-void recibir_instruccion(int numInstruccion, int socket_cliente, t_log* logger, char** instruccion) {
+void recibir_instruccion(int socket_cliente) {
+    char buffer[1024];
+    size_t bytes;
 
-	solicitar_instruccion(numInstruccion, socket_cliente);
-    int size;
-    char* buffer = recibir_buffer(&size, socket_cliente);
-    log_info(logger, "Me llego la instruccion: %s", buffer);
-    *instruccion = strdup(buffer); // Asigna la nueva ruta al puntero path
-    free(buffer);
+    // Recibir instrucción del servidor
+    bytes = recv(socket_cliente, buffer, sizeof(buffer), 0);
+    if (bytes <= 0) {
+        log_error(loggerCpu, "Error al recibir la instrucción");
+        return;
+    }
+
+    log_info(loggerCpu, "Instrucción recibida: %s", buffer);
 }

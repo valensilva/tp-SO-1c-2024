@@ -22,19 +22,20 @@ int main(int argc, char* argv[]) {
     //PARTE CLIENTE EMPIEZA
 
     //creo conexiones
-    
+    /*
     sem_wait(semaforoServidorCPUDispatch);
     conexionKernelCpuDispatch = crear_conexion(ipCpu, puertoCpuDispatch);
     sem_wait(semaforoServidorCPUInterrupt);
     conexionKernelCpuInterrupt = crear_conexion(ipCpu, puertoCpuInterrupt);
+    */
     sem_wait(semaforoServidorMemoria);
     conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
 
     //hago handshakes
     handshakeCliente(conexionKernelMemoria, loggerKernel);   
-    handshakeCliente(conexionKernelCpuDispatch, loggerKernel);   
+  /*  handshakeCliente(conexionKernelCpuDispatch, loggerKernel);   
     handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
-    
+    */
     //INICIO CONSOLA
     while(1){ 
         printf("Ingrese codigo de operacion\n");

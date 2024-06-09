@@ -56,6 +56,9 @@ void terminar_programa(t_log*, t_config*);
 void atender_kernel_dispatch(void);
 void atender_kernel_interrupt(void);
 void iterator(char* value);
+void recibir_instruccion(int socket_cliente);
+void solicitar_instruccion(int instruccion, int socket_cliente);
+void* serializar_paquete(t_paquete* paquete, int bytes);
 
 typedef enum {
 	SET,
