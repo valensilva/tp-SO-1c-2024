@@ -33,20 +33,11 @@ int main(int argc, char* argv[]) {
     conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
     */
     //hago handshakes
-   // handshakeCliente(conexionKernelMemoria, loggerKernel);  
-    pcb* proceso = malloc(sizeof(pcb));
-    proceso->pid = pidGeneral;
-    proceso->program_counter = 0;
-    proceso->quantum = quantum;
-    proceso->estado = NEW;
-    for (int i=0; i<8; i++){
-        proceso->registros[i] = 0;
-    } 
-    
+   // handshakeCliente(conexionKernelMemoria, loggerKernel);   
     handshakeCliente(conexionKernelCpuDispatch, loggerKernel);   
     handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
     
-    enviar_pcb(proceso, conexionKernelCpuDispatch);
+   
    /*
     //INICIO CONSOLA
     while(1){ 
@@ -136,7 +127,7 @@ void crearProceso(char* path, int socket_memoria){
     pidGeneral += 1;
     
     enviar_path(path, socket_memoria);
-    enviar_pcb(proceso, conexionKernelCpuDispatch);
+    
     size_t bytes = recv(socket_memoria, &confirmacion, sizeof(int), 0);
     if(bytes<0){
         log_error(loggerKernel, "error al recibir confirmacion");
