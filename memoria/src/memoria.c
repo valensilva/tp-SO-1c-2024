@@ -9,17 +9,17 @@ int main(int argc, char* argv[]) {
 	//inicializo servidor
 	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
     sem_post(semaforoServidorMemoria);
-    
+    /*
     //incio espera con kernel 
 	pthread_t hilo_kernel;
     pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
     pthread_detach(hilo_kernel);
-	
+	*/
     //inicio espera con la cpu
 	pthread_t hilo_cpu;
     pthread_create(&hilo_cpu, NULL,(void*) atender_cpu, NULL);
-    pthread_detach(hilo_cpu);
-
+    pthread_join(hilo_cpu, NULL);
+/*
     //inicio espera con la Interfaz I/O
 	pthread_t hilo_IO;
     pthread_create(&hilo_IO, NULL,(void*) atender_IO , NULL);
@@ -27,6 +27,7 @@ int main(int argc, char* argv[]) {
     while(1){
         sleep(1);
     }
+*/
 	config_destroy(configMemoria);
 	log_destroy(loggerMemoria);
 
@@ -56,12 +57,12 @@ void atender_cpu(void) {
                 break;
             case PAQUETE:
                 lista = recibir_paquete(fd_cpu);
-                log_info(loggerMemoria, "Me llegaron los siguientes valores del CPU:\n");
+                log_info(loggerMemoria, "Me llegaron los siguientes valores del CPU:");
                 list_iterate(lista, (void*)iterator);
                 break;
             case INSTRUCCIONES:
-                log_info(loggerMemoria, "Solicitud de instrucciones de CPU:\n");
-                enviarInstruccion();
+                log_info(loggerMemoria, "Solicitud de instrucciones de CPU:");
+                enviarInstruccion(fd_cpu);
                 break;
             case -1:
                 log_error(loggerMemoria, "El CPU se desconectó. Terminando hilo de conexión");
@@ -168,23 +169,28 @@ void enviarInstruccion() {
     size_t bytes;
 
     // Recibir número de instrucción
-    bytes = recv(fd_cpu, &numeroDeInstruccion, sizeof(int), MSG_WAITALL);
-    if (bytes <= 0) {
-        log_error(loggerMemoria, "Error al recibir número de instrucción");
-        return;
-    }
-    log_info(loggerMemoria, "Número de instrucción recibido: %d", numeroDeInstruccion);
+    numeroDeInstruccion = recibir_num_instruccion(fd_cpu, loggerMemoria);
 
     // Obtener la instrucción de la lista
-    char* instruccion = list_get(listaInstrucciones, numeroDeInstruccion);
+    /*char* instruccion = list_get(listaInstrucciones, numeroDeInstruccion);
     if (instruccion == NULL) {
         log_error(loggerMemoria, "Instrucción no encontrada para el índice: %d", numeroDeInstruccion);
         return;
     }
     log_info(loggerMemoria, "Instrucción obtenida: %s", instruccion);
+*/
+    //instruccion de prueba de conexiones
+    char * instruccion = "SET AX 2";
+    int size_instruccion = strlen(instruccion) + 1;
 
+    // Enviar tamaño de la instrucción
+    bytes = send(fd_cpu, &size_instruccion, sizeof(int), 0);
+    if (bytes <= 0) {
+        log_error(loggerMemoria, "Error al enviar tamaño de la instrucción");
+        return;
+    }
     // Enviar instrucción al CPU
-    bytes = send(fd_cpu, instruccion, strlen(instruccion) + 1, 0);
+    bytes = send(fd_cpu, instruccion, size_instruccion, 0);
     if (bytes <= 0) {
         log_error(loggerMemoria, "Error al enviar la instrucción");
     } else {
@@ -201,51 +207,20 @@ void iniciar_semaforos(void){
 	}
 }
 
-void enviar_instruccion(char* instruccion, int socket_cliente)
+int recibir_num_instruccion(int socket_cliente, t_log* logger)
 {
-	if (instruccion == NULL) {
-        fprintf(stderr, "Error: instruccion es NULL\n");
-        return;
-    }
-	t_paquete* paquete = malloc(sizeof(t_paquete));
-	if (paquete == NULL) {
-        perror("Error al asignar memoria para paquete");
-        return;
-    }
+    int numInstruccion = -1; // Por si hay un error en la recepción
+    int size;
+    void* buffer = recibir_buffer(&size, socket_cliente);
 
-
-	paquete->codigo_operacion = PATHARCHIVO;
-	paquete->buffer = malloc(sizeof(t_buffer));
-	if (paquete->buffer == NULL) {
-        perror("Error al asignar memoria para paquete->buffer");
-        free(paquete);
-        return;
+    if (buffer != NULL) {
+        // Convertir el buffer a un entero (int) desreferenciando el puntero
+        memcpy(&numInstruccion, buffer, sizeof(int));
+        free(buffer); // Liberar el buffer después de usarlo
+        log_info(logger, "Num Instrucción recibido: %d", numInstruccion);
+    } else {
+        log_error(logger, "Error al recibir el número de instrucción");
     }
-	paquete->buffer->size = strlen(instruccion) + 1;
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-	if (paquete->buffer->stream == NULL) {
-        perror("Error al asignar memoria para paquete->buffer->stream");
-        free(paquete->buffer);
-        free(paquete);
-        return;
-    }
-	memcpy(paquete->buffer->stream, instruccion, paquete->buffer->size);
-
-	int bytes = paquete->buffer->size + 2*sizeof(int);
-
-	void* a_enviar = serializar_paquete(paquete, bytes);
-	if (a_enviar == NULL) {
-        fprintf(stderr, "Error al serializar el paquete\n");
-        free(paquete->buffer->stream);
-        free(paquete->buffer);
-        free(paquete);
-        return;
-    }
-
-	if (send(socket_cliente, a_enviar, bytes, 0) == -1) {
-        perror("Error al enviar el paquete");
-    }
-
-	free(a_enviar);
-	eliminar_paquete(paquete);
+    
+    return numInstruccion;
 }
