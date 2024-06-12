@@ -181,25 +181,18 @@ void handshakeCliente(int fd, t_log* logger) {
         log_error(logger, "Error en el handshake, código de error: %d", result);
     }
 }
-void enviar_pcb(pcb* pcb_a_enviar, int socket_cliente){
-	t_paquete* paquete = crear_paquete(ENVIARPROCESO);
-	agregar_a_paquete(paquete, &(pcb_a_enviar->pid), sizeof(int));
-    // Serializar el program_counter
+void enviar_pcb(pcb* pcb_a_enviar, int socket_cliente) {
+    t_paquete* paquete = crear_paquete(PCB);
+    agregar_a_paquete(paquete, &(pcb_a_enviar->pid), sizeof(int));
     agregar_a_paquete(paquete, &(pcb_a_enviar->program_counter), sizeof(int));
-
-    // Serializar el quantum
     agregar_a_paquete(paquete, &(pcb_a_enviar->quantum), sizeof(int));
-	//serializar registros
-	for(int i=0; i<2; i++){
-		agregar_a_paquete(paquete, &(pcb_a_enviar->registros[i]), sizeof(int));
-	}
-	//serializar estado
-	agregar_a_paquete(paquete, &(pcb_a_enviar->estado), sizeof(EstadoProceso));
+    
+    for (int i = 0; i < 7; i++) {
+        agregar_a_paquete(paquete, &(pcb_a_enviar->registros[i]), sizeof(int));
+    }
 
-    // Enviar el paquete serializado a través del socket
+    agregar_a_paquete(paquete, &(pcb_a_enviar->estado), sizeof(int));
     enviar_paquete(paquete, socket_cliente);
-
-    // Liberar recursos
     eliminar_paquete(paquete);
 }
 

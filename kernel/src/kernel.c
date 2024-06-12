@@ -5,6 +5,7 @@ int main(int argc, char* argv[]) {
     char* cod_op_kernel;
     char* path;
     char **texto_separado;
+    pidGeneral = 1;
     //Inicio Estrucutras
     inicializarEstructurasKernel();
     iniciar_semaforos();
@@ -22,20 +23,31 @@ int main(int argc, char* argv[]) {
     //PARTE CLIENTE EMPIEZA
 
     //creo conexiones
-    /*
+    
     sem_wait(semaforoServidorCPUDispatch);
     conexionKernelCpuDispatch = crear_conexion(ipCpu, puertoCpuDispatch);
     sem_wait(semaforoServidorCPUInterrupt);
     conexionKernelCpuInterrupt = crear_conexion(ipCpu, puertoCpuInterrupt);
-    */
+    /*
     sem_wait(semaforoServidorMemoria);
     conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
-
-    //hago handshakes
-    handshakeCliente(conexionKernelMemoria, loggerKernel);   
-  /*  handshakeCliente(conexionKernelCpuDispatch, loggerKernel);   
-    handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
     */
+    //hago handshakes
+   // handshakeCliente(conexionKernelMemoria, loggerKernel);  
+    pcb* proceso = malloc(sizeof(pcb));
+    proceso->pid = pidGeneral;
+    proceso->program_counter = 0;
+    proceso->quantum = quantum;
+    proceso->estado = NEW;
+    for (int i=0; i<8; i++){
+        proceso->registros[i] = 0;
+    } 
+    
+    handshakeCliente(conexionKernelCpuDispatch, loggerKernel);   
+    handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
+    
+    enviar_pcb(proceso, conexionKernelCpuDispatch);
+   /*
     //INICIO CONSOLA
     while(1){ 
         printf("Ingrese codigo de operacion\n");
@@ -50,16 +62,17 @@ int main(int argc, char* argv[]) {
         puts(path);
         if (strcmp(cod_op_kernel, "INICIAR_PROCESO") == 0){
             crearProceso(path, conexionKernelMemoria);
-            /*
+            
             if(esFIFO() == 1) planificarPorFIFO();
             else if(esRR() == 1) planificarPorRR();
-            */
+            
         }
         else {
             printf("operacion desconocida");
         }
         
     }  
+    */
     //PARTE CLIENTE TERMINA 
 
     //termino programa
@@ -108,16 +121,22 @@ void handshakeKernel(int fd_kernel,t_log* loggerKernel){
 void crearProceso(char* path, int socket_memoria){
     int confirmacion;
     pcb* proceso = malloc(sizeof(pcb));
+    if (proceso == NULL) {
+        log_error(loggerKernel, "Error al asignar memoria para el proceso");
+        return;
+    }
     proceso->pid = pidGeneral;
     proceso->program_counter = 0;
     proceso->quantum = quantum;
     proceso->estado = NEW;
-    proceso->registros[0] = 0; 
-    proceso->registros[1] = 0;
+    for (int i=0; i<8; i++){
+        proceso->registros[i] = 0;
+    }
     queue_push(colaNew, proceso);
     pidGeneral += 1;
     
     enviar_path(path, socket_memoria);
+    enviar_pcb(proceso, conexionKernelCpuDispatch);
     size_t bytes = recv(socket_memoria, &confirmacion, sizeof(int), 0);
     if(bytes<0){
         log_error(loggerKernel, "error al recibir confirmacion");
@@ -127,7 +146,7 @@ void crearProceso(char* path, int socket_memoria){
     if(confirmacion == 1 && procesosEnReady < gradoMultiprogramacion){
         procesoAReady();    
     } 
-
+    
 }
 
 void procesoAReady(){

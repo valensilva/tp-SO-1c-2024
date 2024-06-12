@@ -31,7 +31,7 @@ typedef struct
     int program_counter;
     int quantum;
     EstadoProceso estado;
-    int registros[2];
+    int registros[7];
 } pcb;
 
 extern int pidGeneral; //esto para que cada vez que creo un pcb nuevo voy actualizando el valor del 
@@ -45,4 +45,5 @@ void decir_hola(char* quien);
 t_config* iniciar_config(char* archivo_config);
 t_log* iniciar_logger(char* nombreArhcivoLog, char* nombreLog, bool seMuestraEnConsola, t_log_level nivelDetalle);
 void terminar_programa(t_log* logger, t_config* config);
+char* estadoProcesoToString(EstadoProceso estado); 
 #endif

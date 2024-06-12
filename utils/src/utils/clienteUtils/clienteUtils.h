@@ -20,7 +20,8 @@ typedef enum
 	PATHARCHIVO,
 	ENVIARPROCESO,
 	PCB_EXIT,
-	INSTRUCCIONES
+	INSTRUCCIONES,
+	PCB
 }op_code;
 
 typedef struct

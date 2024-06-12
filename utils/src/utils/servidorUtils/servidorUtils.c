@@ -141,19 +141,42 @@ pcb* recibir_pcb(int socket_cliente) {
     free(buffer);
     return proceso;
 }
-pcb* deserializar_pcb(void* buffer, int* desplazamiento){
-	pcb* proceso = malloc(sizeof(pcb));
-	memcpy(&(proceso->pid), buffer + *desplazamiento, sizeof(int));
-	*desplazamiento += sizeof(int);
-	memcpy(&(proceso->program_counter), buffer + *desplazamiento, sizeof(int));
-	*desplazamiento += sizeof(int);
-	memcpy(&(proceso->estado), buffer + *desplazamiento, sizeof(EstadoProceso));
-	desplazamiento += sizeof(EstadoProceso); 
-	for(int i=0; i<2; i++){
-		memcpy(&(proceso->registros[i]), buffer + *desplazamiento, sizeof(int));
-		*desplazamiento += sizeof(int);
-	}
-	return proceso;
+pcb* deserializar_pcb(void* buffer, int* desplazamiento) {
+    pcb* proceso = malloc(sizeof(pcb));
+    int size;
+    // Deserializar pid
+    memcpy(&size, buffer + *desplazamiento, sizeof(int));
+    *desplazamiento += sizeof(int);
+    memcpy(&(proceso->pid), buffer + *desplazamiento, size);
+    *desplazamiento += size;
+
+    // Deserializar program_counter
+    memcpy(&size, buffer + *desplazamiento, sizeof(int));
+    *desplazamiento += sizeof(int);
+    memcpy(&(proceso->program_counter), buffer + *desplazamiento, size);
+    *desplazamiento += size;
+
+    // Deserializar quantum
+    memcpy(&size, buffer + *desplazamiento, sizeof(int));
+    *desplazamiento += sizeof(int);
+    memcpy(&(proceso->quantum), buffer + *desplazamiento, size);
+    *desplazamiento += size;
+
+    // Deserializar registros
+    for (int i = 0; i < 7; i++) {
+        memcpy(&size, buffer + *desplazamiento, sizeof(int));
+        *desplazamiento += sizeof(int);
+        memcpy(&(proceso->registros[i]), buffer + *desplazamiento, size);
+        *desplazamiento += size;
+    }
+
+    // Deserializar estado
+    memcpy(&size, buffer + *desplazamiento, sizeof(int));
+    *desplazamiento += sizeof(int);
+    memcpy(&(proceso->estado), buffer + *desplazamiento, size);
+    *desplazamiento += size;
+
+    return proceso;
 }
 void recibir_path(int socket_cliente, t_log* logger, char** path) {
     int size;

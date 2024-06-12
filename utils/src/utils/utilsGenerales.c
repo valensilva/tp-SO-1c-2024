@@ -34,3 +34,13 @@ void terminar_programa(t_log* logger, t_config* config)
 	config_destroy(config);
 }
 int pidGeneral = 1;
+char* estadoProcesoToString(EstadoProceso estado){
+    switch (estado) {
+        case NEW: return "NEW";
+        case READY: return "READY";
+        case EXECUTE: return "EXECUTE";
+        case BLOCKED: return "BLOCKED";
+        case EXIT: return "EXIT";
+        default: return "UNKNOWN";
+    }
+}

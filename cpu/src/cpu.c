@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 	inicializarEstructurasCpu();
 	iniciar_semaforos();
 	//INICIA SERVIDOR CPU
-/*
+
 	//incio servidores
 	fd_cpu_dispatch = iniciar_servidor(puertoEscuchaDispatch, loggerCpu, "cpu dispatch lista para recibir conexiones");
 	sem_post(semaforoServidorCPUDispatch);
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 	pthread_create(&thread_kernel_interrupt, NULL, (void*) atender_kernel_interrupt, NULL);
 	pthread_join(thread_kernel_interrupt, NULL);
 
-*/
+/*
 	//INICIA PARTE CLIENTE
 	sem_wait(semaforoServidorMemoria);
 	log_info(loggerCpu, "SEM: servidor de memoria listo");
@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 	char * instruccion;
 	recibir_instruccion(2,conexionCpuMemoria,loggerCpu, &instruccion);
 	//TERMINA PARTE CLIENTE
-
+*/
 	//termina programa -- NO COMENTAR -- se tiene que liberar la memoria
 	liberar_conexion(conexionCpuMemoria);
 	terminar_programa(loggerCpu, configCpu);
@@ -77,27 +77,17 @@ void atender_kernel_dispatch(void) {
 		case MENSAJE:
 			recibir_mensaje(fd_kernel_dispatch, loggerCpu);
 			break;
-		case PAQUETE:
-    		if( (pcb_recibido = malloc(sizeof(pcb))) == NULL) {
-				log_error(loggerCpu, "Error al asignar memoria");
-				seguir = 0;
-				break;
-			}
-			pcb_recibido = recibir_pcb(fd_kernel_dispatch);
-			log_info(loggerCpu, "Me llegaron los siguientes valores del kernel dispatch:\n");
-			log_info(loggerCpu, "pid: %d", pcb_recibido->pid);
-			log_info(loggerCpu, "Program Counter: %d", pcb_recibido->program_counter);
-            log_info(loggerCpu, "Quantum: %d", pcb_recibido->quantum);
-			log_info(loggerCpu, "State: %d", pcb_recibido->estado);
-			log_info(loggerCpu, "Registros: [ %d ][ %d ]", pcb_recibido->registros[0], pcb_recibido->registros[1]);
-			
-			//pido instrucciones
-
-			//ejecuto ciclo de instruccion
-			ciclo_de_instruccion(pcb_recibido);
-
-			free(pcb_recibido);
-			break;
+		case PCB:
+            pcb_recibido = recibir_pcb(fd_kernel_dispatch);
+            if (!pcb_recibido) {
+                seguir = 0;
+                break;
+            }
+            log_pcb(pcb_recibido);
+            // pedir instrucciones y ejecutar ciclo de instrucción
+            // ciclo_de_instruccion(pcb_recibido);
+            free(pcb_recibido);
+            break;
 		case -1:
 			seguir = 0;	
 			log_error(loggerCpu, "el kernel dispatch se desconecto");
@@ -333,4 +323,18 @@ void recibir_instruccion(int numInstruccion, int socket_cliente, t_log* logger, 
     *instruccion = strdup(buffer); // Asigna la instrucción al puntero
     free(buffer);
 }
-
+void log_pcb(pcb* pcb_recibido){
+	log_info(loggerCpu, "Me llegaron los siguientes valores del kernel dispatch:\n");
+    log_info(loggerCpu, "pid: %d", pcb_recibido->pid);
+    log_info(loggerCpu, "Program Counter: %d", pcb_recibido->program_counter);
+    log_info(loggerCpu, "Quantum: %d", pcb_recibido->quantum);
+    log_info(loggerCpu, "Estado: %s", estadoProcesoToString(pcb_recibido->estado));
+    log_info(loggerCpu, "Registro AX: [ %d ]", pcb_recibido->registros[0]);
+    log_info(loggerCpu, "Registro BX: [ %d ]", pcb_recibido->registros[1]);
+    log_info(loggerCpu, "Registro CX: [ %d ]", pcb_recibido->registros[2]);
+    log_info(loggerCpu, "Registro DX: [ %d ]", pcb_recibido->registros[3]);
+    log_info(loggerCpu, "Registro EAX: [ %d ]", pcb_recibido->registros[4]);
+    log_info(loggerCpu, "Registro EBX: [ %d ]", pcb_recibido->registros[5]);
+    log_info(loggerCpu, "Registro ECX: [ %d ]", pcb_recibido->registros[6]);
+    log_info(loggerCpu, "Registro EDX: [ %d ]", pcb_recibido->registros[7]);
+}
