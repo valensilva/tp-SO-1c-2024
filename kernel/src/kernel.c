@@ -158,8 +158,10 @@ void algoritmoFIFO(t_queue* cola){
     proceso->estado = EXECUTE;
     procesosEnReady--;
     enviar_pcb(proceso, conexionKernelCpuDispatch);
+    log_info(loggerKernel, "PID: <%d> - EXECUTE", proceso->pid);
     free(proceso);
 }
+
 void recibirPCBCPUFIFO(){
     op_code code_op = recibir_operacion(conexionKernelCpuDispatch);
     switch(code_op){

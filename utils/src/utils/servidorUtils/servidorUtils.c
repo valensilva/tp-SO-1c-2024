@@ -71,6 +71,23 @@ void* recibir_buffer(int* size, int socket_cliente)
 	return buffer;
 }
 
+char* recibir_buffer2(int* size, int socket_cliente) {
+    // Primero, recibimos el tamaño del buffer
+    if (recv(socket_cliente, size, sizeof(int), MSG_WAITALL) <= 0) {
+        return NULL;
+    }
+
+    // Luego, recibimos el buffer
+    char* buffer = malloc(*size);
+    if (recv(socket_cliente, buffer, *size, MSG_WAITALL) <= 0) {
+        free(buffer);
+        return NULL;
+    }
+
+    return buffer;
+}
+
+
 void recibir_mensaje(int socket_cliente,t_log* logger)
 {
 	int size;
@@ -145,3 +162,4 @@ void recibir_path(int socket_cliente, t_log* logger, char** path) {
     *path = strdup(buffer); // Asigna la nueva ruta al puntero path
     free(buffer);
 }
+
