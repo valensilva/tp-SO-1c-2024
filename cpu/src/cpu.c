@@ -18,6 +18,7 @@ int main(int argc, char* argv[]) {
 	sem_wait(semaforoServidorMemoria);
 	log_info(loggerCpu, "SEM: servidor de memoria listo");
     conexionCpuMemoria = crear_conexion(ipMemoria, puertoMemoria);
+	sem_post(semaforoServidorMemoria);
     
 	if (conexionCpuMemoria == -1) {
         log_error(loggerCpu, "Error al crear conexión con la memoria");
@@ -26,7 +27,6 @@ int main(int argc, char* argv[]) {
 
     log_info(loggerCpu, "Conexión establecida con la memoria");
 	handshakeCliente(conexionCpuMemoria, loggerCpu);
-	// envio a la memoria el mensaje hola_memoria
 
 /*
 	char * instruccion;
@@ -85,9 +85,13 @@ void atender_kernel_dispatch(void) {
                 seguir = 0;
                 break;
             }
+			log_info(loggerCpu, "--pcb recibido con exito");
             log_pcb(pcb_recibido);
+			puts("");
             // pedir instrucciones y ejecutar ciclo de instrucción
             ciclo_de_instruccion(pcb_recibido);
+			puts("");
+			log_pcb(pcb_recibido);
             free(pcb_recibido);
             break;
 		case -1:
@@ -95,7 +99,7 @@ void atender_kernel_dispatch(void) {
 			log_error(loggerCpu, "el kernel dispatch se desconecto");
 			break;//ver perdida de memoria
 		default:
-			log_warning(loggerCpu,"Operacion desconocida.");
+			log_warning(loggerCpu,"operacion desconocida desde kernel dispatch.");
 			break;
 		}
 	}
@@ -133,8 +137,9 @@ void ciclo_de_instruccion(pcb* proceso_exec){
 	char * instruccion;
 	//fetch
 	recibir_instruccion(proceso_exec->program_counter, conexionCpuMemoria,loggerCpu, &instruccion);
-
 	char ** instruccion_separada = string_split(instruccion, " ");
+
+	log_info(loggerCpu, "PID: %d - FETCH - Program Counter: %d", proceso_exec->pid, proceso_exec->program_counter);
 
 	//decode
 	uint32_t cod = obtener_valor_cod(instruccion_separada[0]);
@@ -148,17 +153,18 @@ void ciclo_de_instruccion(pcb* proceso_exec){
 		uint32_t reg1 = obtener_valor_registro(instruccion_separada[1]);
 		uint32_t valor = strtouint32(instruccion_separada[2]);
 
+		log_info(loggerCpu, "PID: %d - Ejecutando: %s - %s %s", proceso_exec->pid, instruccion_separada[0], instruccion_separada[1], instruccion_separada[2]);
+
 		//execute
 		log_info(loggerCpu, "INSTRUCCION SET ");
 		if(reg1 < 4) {
 			registros_8[reg1] = (uint8_t)valor;
-			log_info(loggerCpu, "Valor de registros_8[%u] = %u", reg1, registros_8[reg1]);
 		} else {
 			registros_32[(reg1-4)] = valor;
-			log_info(loggerCpu, "Valor de registros_32[%u] = %u", reg1-4, registros_32[reg1-4]);
 		}
 		
 		registros_32[6] = ++(proceso_exec->program_counter);
+		proceso_exec->registros[reg1] = valor;
 		break;
 
 	case SUM:
@@ -167,68 +173,71 @@ void ciclo_de_instruccion(pcb* proceso_exec){
 		reg1 = obtener_valor_registro(instruccion_separada[1]);
 		uint32_t reg2 = obtener_valor_registro(instruccion_separada[2]);
 
+		log_info(loggerCpu, "PID: %d - Ejecutando: %s - %s %s", proceso_exec->pid, instruccion_separada[0], instruccion_separada[1], instruccion_separada[2]);
+
 		if(reg1 < 4) {
 			if(reg2 < 4) {
 				registros_8[reg1] = registros_8[reg1] + registros_8[reg2];
-				log_info(loggerCpu, "Valor de registros_8[%u] + = %u", reg1, registros_8[reg1]);
 			} else {
 				registros_8[reg1] = registros_8[reg1] + (uint8_t)registros_32[reg2-4];
-				log_info(loggerCpu, "Valor de registros_8[%u] + = %u", reg1, registros_8[reg1]);
 			}
+			//modifico el contexto
+			proceso_exec->registros[reg1] = registros_8[reg1];
 		} else {
 			if(reg2<4) {
 				registros_32[reg1-4] = registros_32[reg1-4] + registros_8[reg2];
-				log_info(loggerCpu, "Valor de registros_32[%u] + = %u", reg1-4, registros_32[reg1-4]);
 			} else {
 				registros_32[reg1-4] = registros_32[reg1-4] + registros_32[reg2-4];
-				log_info(loggerCpu, "Valor de registros_32[%u] + = %u", reg1-4, registros_32[reg1-4]);
 			}
+			//modifico el contexto
+			proceso_exec->registros[reg1] = registros_32[reg1-4];
 		}
 		registros_32[6] = ++(proceso_exec->program_counter);
+		
 		break;
 
 	case JNZ:
-		log_info(loggerCpu, "INSTRUCCION JNZ");
 		reg1 = obtener_valor_registro(instruccion_separada[1]);
 		valor = strtouint32(instruccion_separada[2]);
 
+		log_info(loggerCpu, "PID: %d - Ejecutando: %s - %s %s", proceso_exec->pid, instruccion_separada[0], instruccion_separada[1], instruccion_separada[2]);
+
 		if(reg1 < 4 && registros_8[reg1] != 0) {
 			registros_32[6] = valor;
-			log_info(loggerCpu, "Valor de PC = %u", registros_32[6]);
 		} else if(registros_32[reg1] != 0){
 			registros_32[6] = valor;
-			log_info(loggerCpu, "Valor de PC = %u", registros_32[6]);
 		}
+		proceso_exec->registros[reg1] = valor;
 		break;
 
 	case SUB:
-		log_info(loggerCpu, "INSTRUCCION SUB");
 
 		reg1 = obtener_valor_registro(instruccion_separada[1]);
 		reg2 = obtener_valor_registro(instruccion_separada[2]);
 
+		log_info(loggerCpu, "PID: %d - Ejecutando: %s - %s %s", proceso_exec->pid, instruccion_separada[0], instruccion_separada[1], instruccion_separada[2]);
+
 		if(reg1 < 4) {
 			if(reg2<4) {
 				registros_8[reg1] = registros_8[reg1] - registros_8[reg2];
-				log_info(loggerCpu, "Valor de registros_8[%u] + = %u", reg1, registros_8[reg1]);
 			} else {
-				registros_8[reg1] = registros_8[reg1] - (uint8_t)registros_32[reg2-4];
-				log_info(loggerCpu, "Valor de registros_8[%u] + = %u", reg1, registros_8[reg1]);
+				registros_8[reg1] = registros_8[reg1] - (uint8_t)registros_32[reg2-4];			
 			}
+			proceso_exec->registros[reg1] = registros_8[reg1];
 		} else {
 			if(reg2<4) {
 				registros_32[reg1-4] = registros_32[reg1-4] - registros_8[reg2];
-				log_info(loggerCpu, "Valor de registros_32[%u] + = %u", reg1-4, registros_32[reg1-4]);
 			} else {
 				registros_32[reg1-4] = registros_32[reg1-4] - registros_32[reg2-4];
-				log_info(loggerCpu, "Valor de registros_32[%u] + = %u", reg1-4, registros_32[reg1-4]);
 			}
+			proceso_exec->registros[reg1] = registros_8[reg1-4];
 		}
 		registros_32[6] = ++(proceso_exec->program_counter);
 
 		break;
 	case IO_GEN_SLEEP:
-		log_info(loggerCpu, "INSTRUCCION IO_GEN_SLEEP");
+		
+		log_info(loggerCpu, "PID: %d - Ejecutando: %s - %s %s", proceso_exec->pid, instruccion_separada[0], instruccion_separada[1]);
 		
 		break;	
 	default:
@@ -318,22 +327,22 @@ void recibir_instruccion(int numInstruccion, int socket_cliente, t_log* logger, 
         return;
     }
 
-    log_info(logger, "Me llego la instrucción: %s", buffer);
+    log_info(logger, "--instrucción recibida con exito");
     *instruccion = strdup(buffer); // Asigna la instrucción al puntero
     free(buffer);
 }
+
 void log_pcb(pcb* pcb_recibido){
-	log_info(loggerCpu, "Me llegaron los siguientes valores del kernel dispatch:");
-    log_info(loggerCpu, "pid: %d", pcb_recibido->pid);
-    log_info(loggerCpu, "Program Counter: %d", pcb_recibido->program_counter);
-    log_info(loggerCpu, "Quantum: %d", pcb_recibido->quantum);
-    log_info(loggerCpu, "Estado: %s", estadoProcesoToString(pcb_recibido->estado));
-    log_info(loggerCpu, "Registro AX: [ %d ]", pcb_recibido->registros[0]);
-    log_info(loggerCpu, "Registro BX: [ %d ]", pcb_recibido->registros[1]);
-    log_info(loggerCpu, "Registro CX: [ %d ]", pcb_recibido->registros[2]);
-    log_info(loggerCpu, "Registro DX: [ %d ]", pcb_recibido->registros[3]);
-    log_info(loggerCpu, "Registro EAX: [ %d ]", pcb_recibido->registros[4]);
-    log_info(loggerCpu, "Registro EBX: [ %d ]", pcb_recibido->registros[5]);
-    log_info(loggerCpu, "Registro ECX: [ %d ]", pcb_recibido->registros[6]);
-    log_info(loggerCpu, "Registro EDX: [ %d ]", pcb_recibido->registros[7]);
+	log_info(loggerCpu, "Valores del PCB del proceso: %d", pcb_recibido->pid);
+    log_info(loggerCpu, "%-16s %-10d","Program Counter", pcb_recibido->program_counter);
+    log_info(loggerCpu, "%-16s %-10d","Quantum", pcb_recibido->quantum);
+    log_info(loggerCpu, "%-16s %-10s","Estado", estadoProcesoToString(pcb_recibido->estado));
+    log_info(loggerCpu, "%-16s %s %d %s","Registro AX ","[",pcb_recibido->registros[0],"]");
+    log_info(loggerCpu, "%-16s %s %d %s","Registro BX ","[",pcb_recibido->registros[1],"]");
+    log_info(loggerCpu, "%-16s %s %d %s","Registro CX ","[",pcb_recibido->registros[2],"]");
+    log_info(loggerCpu, "%-16s %s %d %s","Registro DX ","[",pcb_recibido->registros[3],"]");
+    log_info(loggerCpu, "%-16s %s %d %s","Registro EAX","[",pcb_recibido->registros[4],"]");
+    log_info(loggerCpu, "%-16s %s %d %s","Registro EBX","[",pcb_recibido->registros[5],"]");
+    log_info(loggerCpu, "%-16s %s %d %s","Registro ECX","[",pcb_recibido->registros[6],"]");
+    log_info(loggerCpu, "%-16s %s %d %s","Registro EDX","[",pcb_recibido->registros[7],"]");
 }

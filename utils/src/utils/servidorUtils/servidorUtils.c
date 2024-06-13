@@ -181,7 +181,7 @@ pcb* deserializar_pcb(void* buffer, int* desplazamiento) {
 void recibir_path(int socket_cliente, t_log* logger, char** path) {
     int size;
     char* buffer = recibir_buffer(&size, socket_cliente);
-    log_info(logger, "Me llego el path: %s", buffer);
+    log_info(logger, "--path recibido con exito");
     *path = strdup(buffer); // Asigna la nueva ruta al puntero path
     free(buffer);
 }

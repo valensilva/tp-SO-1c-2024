@@ -62,7 +62,6 @@ void atender_cpu(void) {
                 list_iterate(lista, (void*)iterator);
                 break;
             case INSTRUCCIONES:
-                log_info(loggerMemoria, "Solicitud de instrucciones de CPU:");
                 enviarInstruccion(fd_cpu);
                 break;
             case -1:
@@ -126,8 +125,6 @@ void atender_kernel(void) {
             case PATHARCHIVO:
                 recibir_path(fd_kernel, loggerMemoria, &pathArchivo);
                 leer_archivo(pathArchivo);
-                log_info(loggerMemoria,"Lista de instrucciones creada:");
-                list_iterate(listaInstrucciones, (void*)iterator);
                 break;
             case -1:
                 seguir=0;
@@ -162,7 +159,7 @@ void leer_archivo(const char* file) {
         }
         confirmacion = 1;
         size_t bytes = send(fd_kernel, &confirmacion, sizeof(int), 0);
-        log_info(loggerMemoria, "lista de instrucciones creada con exito");
+        log_info(loggerMemoria, "--lista de instrucciones creada con exito");
         fclose(pseudocodigo);
     } else {
         confirmacion = 0;
@@ -184,7 +181,7 @@ void enviarInstruccion(int socket_cliente) {
         log_error(loggerMemoria, "Instrucción no encontrada para el índice: %d", numeroDeInstruccion);
         return;
     }
-    log_info(loggerMemoria, "Instrucción obtenida: %s", instruccion);
+    log_info(loggerMemoria, "--enviando instrucción: %s", instruccion);
 
     //instruccion de prueba de conexiones
     int size_instruccion = strlen(instruccion) + 1;
@@ -223,7 +220,7 @@ int recibir_num_instruccion(int socket_cliente, t_log* logger)
         // Convertir el buffer a un entero (int) desreferenciando el puntero
         memcpy(&numInstruccion, buffer, sizeof(int));
         free(buffer); // Liberar el buffer después de usarlo
-        log_info(logger, "Num Instrucción recibido: %d", numInstruccion);
+        log_info(logger, "--num de instrucción recibido con exito: %d", numInstruccion);
     } else {
         log_error(logger, "Error al recibir el número de instrucción");
     }
@@ -244,5 +241,4 @@ void escuchar(void) {
 	pthread_t hilo_kernel;
     pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
     pthread_join(hilo_kernel, NULL);
-	
 }

@@ -14,30 +14,27 @@ int main(int argc, char* argv[]) {
     fd_kernel = iniciar_servidor(puertoEscuchaKernel, loggerKernel, "Kernel listo para recibir conexiones");
     sem_post(semaforoServidorKernel);
     
-    //Espera de conexion E/S
-    pthread_t hilo_conexion_IO;
-    pthread_create(&hilo_conexion_IO, NULL, (void*) atender_IO, NULL);
-    pthread_detach(hilo_conexion_IO);  
-    //  TERMINA PARTE SERVIDOR 
-
     //PARTE CLIENTE EMPIEZA
 
     //creo conexiones
-    
     sem_wait(semaforoServidorCPUDispatch);
     conexionKernelCpuDispatch = crear_conexion(ipCpu, puertoCpuDispatch);
+    handshakeCliente(conexionKernelCpuDispatch, loggerKernel);   
+    
     sem_wait(semaforoServidorCPUInterrupt);
     conexionKernelCpuInterrupt = crear_conexion(ipCpu, puertoCpuInterrupt);
-    sem_wait(semaforoServidorMemoria);
-    conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
-    
-    //hago handshakes
-    handshakeCliente(conexionKernelMemoria, loggerKernel);   
-    handshakeCliente(conexionKernelCpuDispatch, loggerKernel);   
     handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
-    
-   
-   
+
+    sem_wait(semaforoServidorMemoria);
+    log_info(loggerKernel, "SEM: servidor de memoria listo");
+    conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
+    handshakeCliente(conexionKernelMemoria, loggerKernel);   
+   /* 
+    //Espera de conexion E/S
+    pthread_t hilo_conexion_IO;
+    pthread_create(&hilo_conexion_IO, NULL, (void*) atender_IO, NULL);
+    pthread_join(hilo_conexion_IO, NULL);  
+   */
     //INICIO CONSOLA
     while(1){ 
         printf("Ingrese codigo de operacion\n");
