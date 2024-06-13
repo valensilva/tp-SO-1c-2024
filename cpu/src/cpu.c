@@ -13,24 +13,6 @@ int main(int argc, char* argv[]) {
 	//inicializo estructuras cpu
 	inicializarEstructurasCpu();
 	iniciar_semaforos();
-	//INICIA SERVIDOR CPU
-
-	//incio servidores
-	fd_cpu_dispatch = iniciar_servidor(puertoEscuchaDispatch, loggerCpu, "cpu dispatch lista para recibir conexiones");
-	sem_post(semaforoServidorCPUDispatch);
-	fd_cpu_interrupt = iniciar_servidor(puertoEscuchaInterrupt, loggerCpu, "cpu interrupt lista para recibir conexiones");
-	sem_post(semaforoServidorCPUInterrupt);
-	
-	//atiendo kernel dispatch
-	pthread_t thread_kernel_dispatch;
-	pthread_create(&thread_kernel_dispatch, NULL, (void*) atender_kernel_dispatch, NULL);
-	pthread_detach(thread_kernel_dispatch);
-	
-	//atiendo kernel interrupt
-	pthread_t thread_kernel_interrupt;
-	pthread_create(&thread_kernel_interrupt, NULL, (void*) atender_kernel_interrupt, NULL);
-	pthread_join(thread_kernel_interrupt, NULL);
-
 
 	//INICIA PARTE CLIENTE
 	sem_wait(semaforoServidorMemoria);
@@ -45,12 +27,31 @@ int main(int argc, char* argv[]) {
     log_info(loggerCpu, "Conexión establecida con la memoria");
 	handshakeCliente(conexionCpuMemoria, loggerCpu);
 	// envio a la memoria el mensaje hola_memoria
-/*
 
+/*
 	char * instruccion;
 	recibir_instruccion(2,conexionCpuMemoria,loggerCpu, &instruccion);
 	//TERMINA PARTE CLIENTE
 */
+
+	//INICIA SERVIDOR CPU
+
+	//incio servidores
+	fd_cpu_dispatch = iniciar_servidor(puertoEscuchaDispatch, loggerCpu, "cpu dispatch lista para recibir conexiones");
+	sem_post(semaforoServidorCPUDispatch);
+	fd_cpu_interrupt = iniciar_servidor(puertoEscuchaInterrupt, loggerCpu, "cpu interrupt lista para recibir conexiones");
+	sem_post(semaforoServidorCPUInterrupt);
+
+	//atiendo kernel dispatch
+	pthread_t thread_kernel_dispatch;
+	pthread_create(&thread_kernel_dispatch, NULL, (void*) atender_kernel_dispatch, NULL);
+	pthread_detach(thread_kernel_dispatch);
+	
+	//atiendo kernel interrupt
+	pthread_t thread_kernel_interrupt;
+	pthread_create(&thread_kernel_interrupt, NULL, (void*) atender_kernel_interrupt, NULL);
+	pthread_join(thread_kernel_interrupt, NULL);
+
 	//termina programa -- NO COMENTAR -- se tiene que liberar la memoria
 	liberar_conexion(conexionCpuMemoria);
 	terminar_programa(loggerCpu, configCpu);
@@ -131,10 +132,8 @@ void ciclo_de_instruccion(pcb* proceso_exec){
 
 	char * instruccion;
 	//fetch
-	recibir_instruccion(0, conexionCpuMemoria,loggerCpu, &instruccion);
+	recibir_instruccion(proceso_exec->program_counter, conexionCpuMemoria,loggerCpu, &instruccion);
 
-	//instruccion_t * proxima_instruccion = list_get(instrucciones, proceso_exec->program_counter);
-	//char * instruccion = "SET AX 2"; 
 	char ** instruccion_separada = string_split(instruccion, " ");
 
 	//decode

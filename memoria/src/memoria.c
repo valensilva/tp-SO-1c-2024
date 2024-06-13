@@ -1,4 +1,5 @@
 #include "memoria.h"
+void escuchar(void);
 
 int main(int argc, char* argv[]) {
 	
@@ -9,7 +10,7 @@ int main(int argc, char* argv[]) {
 	//inicializo servidor
 	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
     sem_post(semaforoServidorMemoria);
-    
+    /*
     //incio espera con kernel 
 	pthread_t hilo_kernel;
     pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
@@ -19,6 +20,10 @@ int main(int argc, char* argv[]) {
 	pthread_t hilo_cpu;
     pthread_create(&hilo_cpu, NULL,(void*) atender_cpu, NULL);
     pthread_join(hilo_cpu, NULL);
+*/
+    pthread_t escucha_memoria;
+    pthread_create(&escucha_memoria, NULL, (void*) escuchar, NULL);
+    pthread_join(escucha_memoria, NULL);
 /*
     //inicio espera con la Interfaz I/O
 	pthread_t hilo_IO;
@@ -42,7 +47,7 @@ void inicializarEstructurasMemoria(void){
 }
 
 void atender_cpu(void) {
-    fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
+    //fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
     t_list* lista;
     int seguir = 1;
     while (seguir!=0) {
@@ -62,8 +67,9 @@ void atender_cpu(void) {
                 break;
             case -1:
                 seguir=0;
-                log_error(loggerMemoria, "El CPU se desconectó. Terminando hilo de conexión");
-                pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
+                break;
+                //log_error(loggerMemoria, "El CPU se desconectó. Terminando hilo de conexión");
+                //pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
             default:
                 log_warning(loggerMemoria, "Operación desconocida desde CPU.");
                 break;
@@ -103,7 +109,7 @@ void iterator(char* value) {
 	log_info(loggerMemoria, "%s", value);
 }
 void atender_kernel(void) {
-    fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "kernel conectado");
+    //fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "kernel conectado");
     t_list* lista;
     int seguir = 1;
     while (seguir!=0) {
@@ -173,15 +179,14 @@ void enviarInstruccion(int socket_cliente) {
     numeroDeInstruccion = recibir_num_instruccion(socket_cliente, loggerMemoria);
 
     // Obtener la instrucción de la lista
-    /*char* instruccion = list_get(listaInstrucciones, numeroDeInstruccion);
+    char* instruccion = list_get(listaInstrucciones, numeroDeInstruccion);
     if (instruccion == NULL) {
         log_error(loggerMemoria, "Instrucción no encontrada para el índice: %d", numeroDeInstruccion);
         return;
     }
     log_info(loggerMemoria, "Instrucción obtenida: %s", instruccion);
-*/
+
     //instruccion de prueba de conexiones
-    char * instruccion = "SET AX 2";
     int size_instruccion = strlen(instruccion) + 1;
 
     // Enviar tamaño de la instrucción
@@ -224,4 +229,20 @@ int recibir_num_instruccion(int socket_cliente, t_log* logger)
     }
     
     return numInstruccion;
+}
+
+void escuchar(void) {
+
+    //inicio espera con la cpu
+    fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
+	pthread_t hilo_cpu;
+    pthread_create(&hilo_cpu, NULL,(void*) atender_cpu, NULL);
+    pthread_detach(hilo_cpu);
+
+    //incio espera con kernel 
+    fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "kernel conectado");
+	pthread_t hilo_kernel;
+    pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
+    pthread_join(hilo_kernel, NULL);
+	
 }
