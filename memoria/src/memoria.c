@@ -9,12 +9,12 @@ int main(int argc, char* argv[]) {
 	//inicializo servidor
 	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
     sem_post(semaforoServidorMemoria);
-    /*
+    
     //incio espera con kernel 
 	pthread_t hilo_kernel;
     pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
     pthread_detach(hilo_kernel);
-	*/
+	
     //inicio espera con la cpu
 	pthread_t hilo_cpu;
     pthread_create(&hilo_cpu, NULL,(void*) atender_cpu, NULL);
@@ -34,10 +34,6 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-/*
-void iterator(char* value) {
-	log_info(logger,"%s", value);
-}*/
 void inicializarEstructurasMemoria(void){
 	loggerMemoria = iniciar_logger("memoria.log", "MEMORIA", 1, LOG_LEVEL_INFO);
 	configMemoria = iniciar_config("memoria.config");
@@ -48,8 +44,8 @@ void inicializarEstructurasMemoria(void){
 void atender_cpu(void) {
     fd_cpu = esperar_cliente(fd_memoria, loggerMemoria, "cpu conectada");
     t_list* lista;
-
-    while (TRUE) {
+    int seguir = 1;
+    while (seguir!=0) {
         int cod_op = recibir_operacion(fd_cpu);
         switch (cod_op) {
             case MENSAJE:
@@ -65,6 +61,7 @@ void atender_cpu(void) {
                 enviarInstruccion(fd_cpu);
                 break;
             case -1:
+                seguir=0;
                 log_error(loggerMemoria, "El CPU se desconectó. Terminando hilo de conexión");
                 pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
             default:
@@ -78,8 +75,8 @@ void atender_cpu(void) {
 void atender_IO(void) {
     //fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "I/O conectado");
     t_list* lista;
-
-    while (TRUE) {
+    int seguir = 1;
+    while (seguir!=0) {
         int cod_op = recibir_operacion(fd_IO);
         switch (cod_op) {
             case MENSAJE:
@@ -91,6 +88,7 @@ void atender_IO(void) {
                 list_iterate(lista, (void*)iterator);
                 break;
             case -1:
+                seguir=0;
                 log_error(loggerMemoria, "El I/O se desconectó. Terminando hilo de conexión");
                 pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
             default:
@@ -107,8 +105,8 @@ void iterator(char* value) {
 void atender_kernel(void) {
     fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "kernel conectado");
     t_list* lista;
-
-    while (TRUE) {
+    int seguir = 1;
+    while (seguir!=0) {
         int cod_op = recibir_operacion(fd_kernel);
         switch (cod_op) {
             case MENSAJE:
@@ -122,8 +120,11 @@ void atender_kernel(void) {
             case PATHARCHIVO:
                 recibir_path(fd_kernel, loggerMemoria, &pathArchivo);
                 leer_archivo(pathArchivo);
+                log_info(loggerMemoria,"Lista de instrucciones creada:");
+                list_iterate(listaInstrucciones, (void*)iterator);
                 break;
             case -1:
+                seguir=0;
                 log_error(loggerMemoria, "El kernel se desconectó. Terminando hilo de conexión");
                 pthread_exit(NULL); // Terminar el hilo si la conexión se pierde
             default:
@@ -153,9 +154,9 @@ void leer_archivo(const char* file) {
             list_add_in_index(listaInstrucciones, contador, instruccion);
             contador++;
         }
-        log_info(loggerMemoria, "lista de instrucciones creada con exito");
         confirmacion = 1;
-        size_t bytes = send(fd_cpu, &confirmacion, sizeof(int), 0);
+        size_t bytes = send(fd_kernel, &confirmacion, sizeof(int), 0);
+        log_info(loggerMemoria, "lista de instrucciones creada con exito");
         fclose(pseudocodigo);
     } else {
         confirmacion = 0;
@@ -164,12 +165,12 @@ void leer_archivo(const char* file) {
     }
 }
 
-void enviarInstruccion() {
+void enviarInstruccion(int socket_cliente) {
     int numeroDeInstruccion;
     size_t bytes;
 
     // Recibir número de instrucción
-    numeroDeInstruccion = recibir_num_instruccion(fd_cpu, loggerMemoria);
+    numeroDeInstruccion = recibir_num_instruccion(socket_cliente, loggerMemoria);
 
     // Obtener la instrucción de la lista
     /*char* instruccion = list_get(listaInstrucciones, numeroDeInstruccion);
@@ -184,13 +185,13 @@ void enviarInstruccion() {
     int size_instruccion = strlen(instruccion) + 1;
 
     // Enviar tamaño de la instrucción
-    bytes = send(fd_cpu, &size_instruccion, sizeof(int), 0);
+    bytes = send(socket_cliente, &size_instruccion, sizeof(int), 0);
     if (bytes <= 0) {
         log_error(loggerMemoria, "Error al enviar tamaño de la instrucción");
         return;
     }
     // Enviar instrucción al CPU
-    bytes = send(fd_cpu, instruccion, size_instruccion, 0);
+    bytes = send(socket_cliente, instruccion, size_instruccion, 0);
     if (bytes <= 0) {
         log_error(loggerMemoria, "Error al enviar la instrucción");
     } else {

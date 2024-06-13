@@ -61,6 +61,7 @@ void enviar_mensaje(char* mensaje, int socket_cliente)
 	free(a_enviar);
 	eliminar_paquete(paquete);
 }
+
 void enviar_path(char* path, int socket_cliente)
 {
 	if (path == NULL) {

@@ -28,17 +28,16 @@ int main(int argc, char* argv[]) {
     conexionKernelCpuDispatch = crear_conexion(ipCpu, puertoCpuDispatch);
     sem_wait(semaforoServidorCPUInterrupt);
     conexionKernelCpuInterrupt = crear_conexion(ipCpu, puertoCpuInterrupt);
-    /*
     sem_wait(semaforoServidorMemoria);
     conexionKernelMemoria = crear_conexion(ipMemoria, puertoMemoria);
-    */
+    
     //hago handshakes
-   // handshakeCliente(conexionKernelMemoria, loggerKernel);   
+    handshakeCliente(conexionKernelMemoria, loggerKernel);   
     handshakeCliente(conexionKernelCpuDispatch, loggerKernel);   
     handshakeCliente(conexionKernelCpuInterrupt, loggerKernel);
     
    
-   /*
+   
     //INICIO CONSOLA
     while(1){ 
         printf("Ingrese codigo de operacion\n");
@@ -50,7 +49,7 @@ int main(int argc, char* argv[]) {
         
         cod_op_kernel = texto_separado[0];
         path = texto_separado[1];
-        puts(path);
+        //puts(path);
         if (strcmp(cod_op_kernel, "INICIAR_PROCESO") == 0){
             crearProceso(path, conexionKernelMemoria);
             
@@ -63,7 +62,7 @@ int main(int argc, char* argv[]) {
         }
         
     }  
-    */
+    
     //PARTE CLIENTE TERMINA 
 
     //termino programa
@@ -120,6 +119,7 @@ void crearProceso(char* path, int socket_memoria){
     proceso->program_counter = 0;
     proceso->quantum = quantum;
     proceso->estado = NEW;
+    log_info(loggerKernel, "PID: <%d> - NEW", proceso->pid);
     for (int i=0; i<8; i++){
         proceso->registros[i] = 0;
     }
@@ -143,6 +143,7 @@ void crearProceso(char* path, int socket_memoria){
 void procesoAReady(){
     pcb* proceso = queue_pop(colaNew);
     proceso->estado = READY;
+    log_info(loggerKernel, "PID: <%d> - READY", proceso->pid);
     queue_push(colaReady, proceso);
     procesosEnReady++;
 }
@@ -179,7 +180,7 @@ void recibirPCBCPUFIFO(){
             terminar_proceso(PCB_EXIT);
             break;
         default:
-            log_warning(loggerKernel, "operacion desconocida.");
+            log_warning(loggerKernel, "operacion desconocida desde CPU Dispatch.");
             break;
     }
 }

@@ -25,12 +25,13 @@ int main(int argc, char* argv[]) {
 	pthread_t thread_kernel_dispatch;
 	pthread_create(&thread_kernel_dispatch, NULL, (void*) atender_kernel_dispatch, NULL);
 	pthread_detach(thread_kernel_dispatch);
+	
 	//atiendo kernel interrupt
 	pthread_t thread_kernel_interrupt;
 	pthread_create(&thread_kernel_interrupt, NULL, (void*) atender_kernel_interrupt, NULL);
 	pthread_join(thread_kernel_interrupt, NULL);
 
-/*
+
 	//INICIA PARTE CLIENTE
 	sem_wait(semaforoServidorMemoria);
 	log_info(loggerCpu, "SEM: servidor de memoria listo");
@@ -44,7 +45,7 @@ int main(int argc, char* argv[]) {
     log_info(loggerCpu, "Conexión establecida con la memoria");
 	handshakeCliente(conexionCpuMemoria, loggerCpu);
 	// envio a la memoria el mensaje hola_memoria
-
+/*
 
 	char * instruccion;
 	recibir_instruccion(2,conexionCpuMemoria,loggerCpu, &instruccion);
@@ -85,7 +86,7 @@ void atender_kernel_dispatch(void) {
             }
             log_pcb(pcb_recibido);
             // pedir instrucciones y ejecutar ciclo de instrucción
-            // ciclo_de_instruccion(pcb_recibido);
+            ciclo_de_instruccion(pcb_recibido);
             free(pcb_recibido);
             break;
 		case -1:
@@ -122,17 +123,16 @@ void atender_kernel_interrupt(void) {
 			break;
 		}
 	}
-	
 }
 
 
 
-void ciclo_de_instruccion(pcb* proceso_exec/*, t_list* instrucciones*/){
+void ciclo_de_instruccion(pcb* proceso_exec){
 
 	char * instruccion;
 	//fetch
-	recibir_instruccion(proceso_exec->program_counter, conexionCpuMemoria,loggerCpu, instruccion);
-	
+	recibir_instruccion(0, conexionCpuMemoria,loggerCpu, &instruccion);
+
 	//instruccion_t * proxima_instruccion = list_get(instrucciones, proceso_exec->program_counter);
 	//char * instruccion = "SET AX 2"; 
 	char ** instruccion_separada = string_split(instruccion, " ");
@@ -324,7 +324,7 @@ void recibir_instruccion(int numInstruccion, int socket_cliente, t_log* logger, 
     free(buffer);
 }
 void log_pcb(pcb* pcb_recibido){
-	log_info(loggerCpu, "Me llegaron los siguientes valores del kernel dispatch:\n");
+	log_info(loggerCpu, "Me llegaron los siguientes valores del kernel dispatch:");
     log_info(loggerCpu, "pid: %d", pcb_recibido->pid);
     log_info(loggerCpu, "Program Counter: %d", pcb_recibido->program_counter);
     log_info(loggerCpu, "Quantum: %d", pcb_recibido->quantum);
