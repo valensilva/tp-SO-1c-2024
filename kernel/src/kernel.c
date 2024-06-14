@@ -173,6 +173,7 @@ void recibirPCBCPUFIFO(){
     op_code code_op = recibir_operacion(conexionKernelCpuDispatch);
     switch(code_op){
         case PCB_EXIT:
+            log_info(loggerKernel,"--proceso recibido para finalizacion");
             terminar_proceso(PCB_EXIT);
             break;
         default:

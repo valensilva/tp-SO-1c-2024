@@ -9,7 +9,7 @@ int main(int argc, char* argv[]) {
     
 	//inicializo servidor
 	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
-    sem_post(&semaforoServidorMemoria);
+    sem_post(semaforoServidorMemoria);
     /*
     //incio espera con kernel 
 	pthread_t hilo_kernel;

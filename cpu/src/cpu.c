@@ -234,7 +234,6 @@ void ciclo_de_instruccion(pcb* proceso_exec){
 		break;	
 	case EXIT:
 		//Enviar PCB a KERNEL con codigo PCB_EXIT
-		puts("EXIT");
 		proceso_exec->estado = PEXIT;
 		enviar_pcb_exit(proceso_exec, fd_kernel_dispatch);
 		break;
