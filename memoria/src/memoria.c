@@ -9,7 +9,7 @@ int main(int argc, char* argv[]) {
     
 	//inicializo servidor
 	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
-    sem_post(semaforoServidorMemoria);
+    sem_post(&semaforoServidorMemoria);
     /*
     //incio espera con kernel 
 	pthread_t hilo_kernel;
@@ -181,7 +181,7 @@ void enviarInstruccion(int socket_cliente) {
         log_error(loggerMemoria, "Instrucción no encontrada para el índice: %d", numeroDeInstruccion);
         return;
     }
-    log_info(loggerMemoria, "--enviando instrucción: %s", instruccion);
+    log_info(loggerMemoria, "Enviando instrucción: %s", instruccion);
 
     //instruccion de prueba de conexiones
     int size_instruccion = strlen(instruccion) + 1;
@@ -197,7 +197,7 @@ void enviarInstruccion(int socket_cliente) {
     if (bytes <= 0) {
         log_error(loggerMemoria, "Error al enviar la instrucción");
     } else {
-        log_info(loggerMemoria, "Instrucción enviada con éxito");
+        log_info(loggerMemoria, "--instrucción enviada con éxito");
     }
 }
 

@@ -134,7 +134,6 @@ void crearProceso(char* path, int socket_memoria){
     if(confirmacion == 1 && procesosEnReady < gradoMultiprogramacion){
         procesoAReady();    
     } 
-    
 }
 
 void procesoAReady(){
@@ -189,7 +188,7 @@ void planificarPorRR(){
 }
 void terminar_proceso(op_code code_op){
     pcb* proceso = recibir_pcb(conexionKernelCpuDispatch);
-    proceso->estado = EXIT;
+    //proceso->estado = PEXIT;
     t_paquete* paquete = crear_paquete(PCB_EXIT);
     enviar_paquete(paquete, conexionKernelMemoria);
     log_info(loggerKernel, "PID: <%d> - Finalizado", proceso->pid);
@@ -209,6 +208,7 @@ void recibirPCBCPURR(){
     switch (cod_op)
     {
     case PCB_EXIT:
+        //pcb* proceso = recibir_pcb(conexionKernelCpuDispatch);
         pthread_cancel(hiloContadorQuantum);
         terminar_proceso(PCB_EXIT);
         break;    
@@ -220,7 +220,11 @@ void recibirPCBCPURR(){
 void esperarQuantum(){
     usleep(quantum);
     int interrupcion = 1;
-    send(conexionKernelCpuInterrupt, &interrupcion, sizeof(int), 0);
+    if(send(conexionKernelCpuInterrupt, &interrupcion, sizeof(int), 0)<0){
+        log_error(loggerKernel, "Error al enviar interrupcion");
+        close(conexionKernelCpuInterrupt);
+        return;
+    }
 }
 void iniciar_semaforos(void){
 	semaforoServidorCPUDispatch = sem_open("semaforoServidorCPUDispatch", O_CREAT, 0644, 0);

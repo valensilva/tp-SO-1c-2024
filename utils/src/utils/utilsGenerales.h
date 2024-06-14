@@ -18,12 +18,13 @@ extern sem_t* semaforoServidorCPUInterrupt;
 extern sem_t* semaforoServidorMemoria;
 extern sem_t* semaforoServidorIO;
 extern sem_t* semaforoServidorKernel;
+extern sem_t* mutexInterrupciones;
 typedef enum{
     NEW,
     READY,
     EXECUTE,
     BLOCKED,
-    EXIT
+    PEXIT
 }EstadoProceso;
 typedef struct
 {
