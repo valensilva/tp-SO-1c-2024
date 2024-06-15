@@ -193,6 +193,10 @@ void enviar_pcb(pcb* pcb_a_enviar, int socket_cliente) {
     }
 
     agregar_a_paquete(paquete, &(pcb_a_enviar->estado), sizeof(int));
+	// Serializar t_temporal
+    agregar_a_paquete(paquete, &(pcb_a_enviar->tiempoEnEjecucion->current), sizeof(struct timespec));
+    agregar_a_paquete(paquete, &(pcb_a_enviar->tiempoEnEjecucion->elapsed_ms), sizeof(int64_t));
+    agregar_a_paquete(paquete, &(pcb_a_enviar->tiempoEnEjecucion->status), sizeof(t_temporal_status));
     enviar_paquete(paquete, socket_cliente);
     eliminar_paquete(paquete);
 }

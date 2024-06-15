@@ -21,7 +21,10 @@ typedef enum
 	ENVIARPROCESO,
 	PCB_EXIT,
 	INSTRUCCIONES,
-	PCB
+	PCB,
+	INTERRUPCION,
+	FINQUANTUM,
+	LLAMADAKERNEL
 }op_code;
 
 typedef struct
