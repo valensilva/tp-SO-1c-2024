@@ -15,10 +15,10 @@ int main(int argc, char* argv[]) {
 	iniciar_semaforos();
 
 	//INICIA PARTE CLIENTE
-	sem_wait(semaforoServidorMemoria);
+	sem_wait(&semaforoServidorMemoria);
 	log_info(loggerCpu, "SEM: servidor de memoria listo");
     conexionCpuMemoria = crear_conexion(ipMemoria, puertoMemoria);
-	sem_post(semaforoServidorMemoria);
+	sem_post(&semaforoServidorMemoria);
     
 	if (conexionCpuMemoria == -1) {
         log_error(loggerCpu, "Error al crear conexión con la memoria");
@@ -32,9 +32,9 @@ int main(int argc, char* argv[]) {
 
 	//incio servidores
 	fd_cpu_dispatch = iniciar_servidor(puertoEscuchaDispatch, loggerCpu, "cpu dispatch lista para recibir conexiones");
-	sem_post(semaforoServidorCPUDispatch);
+	sem_post(&semaforoServidorCPUDispatch);
 	fd_cpu_interrupt = iniciar_servidor(puertoEscuchaInterrupt, loggerCpu, "cpu interrupt lista para recibir conexiones");
-	sem_post(semaforoServidorCPUInterrupt);
+	sem_post(&semaforoServidorCPUInterrupt);
 
 	//atiendo kernel dispatch
 	pthread_t thread_kernel_dispatch;

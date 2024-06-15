@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <semaphore.h>
 #include <fcntl.h>
+#include <commons/temporal.h>
 #define TRUE 1
 
 extern sem_t* semaforoServidorCPUDispatch;
@@ -33,6 +34,7 @@ typedef struct
     int quantum;
     EstadoProceso estado;
     int registros[7];
+    t_temporal* tiempoEnEjecucion;
 } pcb;
 
 extern int pidGeneral; //esto para que cada vez que creo un pcb nuevo voy actualizando el valor del 

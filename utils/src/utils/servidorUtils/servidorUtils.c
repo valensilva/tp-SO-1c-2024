@@ -175,7 +175,21 @@ pcb* deserializar_pcb(void* buffer, int* desplazamiento) {
     *desplazamiento += sizeof(int);
     memcpy(&(proceso->estado), buffer + *desplazamiento, size);
     *desplazamiento += size;
+    // Deserializar t_temporal
+    memcpy(&size, buffer + *desplazamiento, sizeof(int));
+    *desplazamiento += sizeof(int);
+    memcpy(&(proceso->tiempoEnEjecucion->current), buffer + *desplazamiento, size);
+    *desplazamiento += size;
 
+    memcpy(&size, buffer + *desplazamiento, sizeof(int));
+    *desplazamiento += sizeof(int);
+    memcpy(&(proceso->tiempoEnEjecucion->elapsed_ms), buffer + *desplazamiento, size);
+    *desplazamiento += size;
+
+    memcpy(&size, buffer + *desplazamiento, sizeof(int));
+    *desplazamiento += sizeof(int);
+    memcpy(&(proceso->tiempoEnEjecucion->status), buffer + *desplazamiento, size);
+    *desplazamiento += size;
     return proceso;
 }
 void recibir_path(int socket_cliente, t_log* logger, char** path) {
