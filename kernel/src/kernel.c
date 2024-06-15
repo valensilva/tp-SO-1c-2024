@@ -68,6 +68,7 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
 void inicializarEstructurasKernel(void){
 	loggerKernel = iniciar_logger("kernel.log", "KERNEL", 1, LOG_LEVEL_INFO);
 	configKernel = iniciar_config("kernel.config");

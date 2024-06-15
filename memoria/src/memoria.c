@@ -7,43 +7,35 @@ int main(int argc, char* argv[]) {
 	inicializarEstructurasMemoria();
     iniciar_semaforos();
     
+    if((espacioMemoria = malloc(tamanioMemoria)) == NULL) {
+        log_error(loggerMemoria, "No se pudo asignar espacio para el espacio de usuario");
+        config_destroy(configMemoria);
+	    log_destroy(loggerMemoria);
+        sem_destroy(semaforoServidorMemoria);
+        return EXIT_FAILURE;
+    };
+
 	//inicializo servidor
-	fd_memoria = iniciar_servidor(puerto_escucha_memoria, loggerMemoria, "memoria lista para recibir conexiones");
+	fd_memoria = iniciar_servidor(puertoEscuchaMemoria, loggerMemoria, "memoria lista para recibir conexiones");
     sem_post(semaforoServidorMemoria);
-    /*
-    //incio espera con kernel 
-	pthread_t hilo_kernel;
-    pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
-    pthread_detach(hilo_kernel);
-	
-    //inicio espera con la cpu
-	pthread_t hilo_cpu;
-    pthread_create(&hilo_cpu, NULL,(void*) atender_cpu, NULL);
-    pthread_join(hilo_cpu, NULL);
-*/
+
     pthread_t escucha_memoria;
     pthread_create(&escucha_memoria, NULL, (void*) escuchar, NULL);
     pthread_join(escucha_memoria, NULL);
-/*
-    //inicio espera con la Interfaz I/O
-	pthread_t hilo_IO;
-    pthread_create(&hilo_IO, NULL,(void*) atender_IO , NULL);
-    pthread_join(hilo_IO, NULL);
-    while(1){
-        sleep(1);
-    }
-*/
+
 	config_destroy(configMemoria);
 	log_destroy(loggerMemoria);
-
+    sem_destroy(semaforoServidorMemoria);
     return 0;
 }
 
 void inicializarEstructurasMemoria(void){
 	loggerMemoria = iniciar_logger("memoria.log", "MEMORIA", 1, LOG_LEVEL_INFO);
 	configMemoria = iniciar_config("memoria.config");
-	puerto_escucha_memoria = config_get_string_value(configMemoria, "PUERTO_ESCUCHA");
-
+	puertoEscuchaMemoria = config_get_string_value(configMemoria, "PUERTO_ESCUCHA");
+    tamanioPag = config_get_string_value(configMemoria, "TAM_PAGINA");
+    tamanioMemoria = config_get_string_value(configMemoria, "TAM_MEMORIA");
+    retardoMem = config_get_string_value(configMemoria, "RETARDO_RESPUESTA");
 }
 
 void atender_cpu(void) {
@@ -76,7 +68,6 @@ void atender_cpu(void) {
     }
 }
 
-
 void atender_IO(void) {
     //fd_IO = esperar_cliente(fd_memoria, loggerMemoria, "I/O conectado");
     t_list* lista;
@@ -103,10 +94,10 @@ void atender_IO(void) {
     }
 }
 
-
 void iterator(char* value) {
 	log_info(loggerMemoria, "%s", value);
 }
+
 void atender_kernel(void) {
     //fd_kernel = esperar_cliente(fd_memoria, loggerMemoria, "kernel conectado");
     t_list* lista;
@@ -242,3 +233,10 @@ void escuchar(void) {
     pthread_create(&hilo_kernel, NULL, (void*) atender_kernel, NULL);
     pthread_join(hilo_kernel, NULL);
 }
+
+
+void escribirEnPosicion(uint32_t dirFisica, uint32_t dato, uint32_t pid, uint32_t nroPag ){
+	usleep((useconds_t)retardoMem * (useconds_t)1000);
+	memcpy(espacioMemoria + dirFisica, &dato, sizeof(uint32_t));
+}
+
