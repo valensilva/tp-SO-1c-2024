@@ -29,6 +29,26 @@ int main(void){
 
     //Handshake
     //handshakeCliente(fd_esMem, loggerEntradaSalida);
+
+     //STDIN Y STDOUT
+     char comando[20];
+    while (1) {
+        printf("Ingrese el comando (IO_STDIN_READ / IO_STDOUT_WRITE / SALIR): ");
+        fgets(comando, sizeof(comando), stdin);
+        comando[strcspn(comando, "\n")] = 0;  // Remover el salto de línea
+
+        if (strcmp(comando, "IO_STDIN_READ") == 0) {
+            io_stdin_read(ipMemoria, puertoMemoria, loggerEntradaSalida);
+        } else if (strcmp(comando, "IO_STDOUT_WRITE") == 0) {
+            io_stdout_write(ipMemoria, puertoMemoria, loggerEntradaSalida);
+        } else if (strcmp(comando, "SALIR") == 0) {
+            break;
+        } else {
+            printf("Comando no reconocido.\n");
+        }
+    }
+
+
   
     //liberar_conexion(fd_es);
     //liberar_conexion(fd_esMem);
@@ -142,9 +162,63 @@ void serializar_lista(t_list* lista, int socket_cliente, t_log* logger){
     free(paquete);
 }
 
-//STDIN
+//STDIN Y STDOUT
 
-//STDOUT
+void io_stdin_read(char* ip_memoria, char* puerto_memoria, t_log* logger) {
+    char buffer[256];
+    printf("Ingrese el texto: ");
+    fgets(buffer, sizeof(buffer), stdin);
+
+    int direccion_fisica;
+    printf("Ingrese la dirección física: ");
+    scanf("%d", &direccion_fisica);
+    getchar();  // Limpiar el buffer de entrada
+
+    // Conectar a la memoria
+    int fd_memoria = crear_conexion(ip_memoria, puerto_memoria);
+    if (fd_memoria == -1) {
+        log_error(logger, "Error al conectar con la memoria.");
+        return;
+    }
+
+    // Enviar el dato y la dirección física a la memoria
+    // Supongamos que hay una función `enviar_datos_memoria` para esto
+    enviar_datos_memoria(fd_memoria, direccion_fisica, buffer);
+    log_info(logger, "Texto enviado a la memoria.");
+
+    // Cerrar la conexión
+    liberar_conexion(fd_memoria);
+}
+
+void io_stdout_write(char* ip_memoria, char* puerto_memoria, t_log* logger) {
+    int direccion_fisica;
+    printf("Ingrese la dirección física: ");
+    scanf("%d", &direccion_fisica);
+    getchar();  // Limpiar el buffer de entrada
+
+    // Conectar a la memoria
+    int fd_memoria = crear_conexion(ip_memoria, puerto_memoria);
+    if (fd_memoria == -1) {
+        log_error(logger, "Error al conectar con la memoria.");
+        return;
+    }
+
+    // Solicitar el dato en la dirección física
+    // Supongamos que hay una función `recibir_datos_memoria` para esto
+    char buffer[256];
+    recibir_datos_memoria(fd_memoria, direccion_fisica, buffer);
+    log_info(logger, "Datos recibidos de la memoria.");
+
+    // Mostrar el dato por pantalla
+    printf("Datos en la dirección %d: %s\n", direccion_fisica, buffer);
+
+    // Cerrar la conexión
+    liberar_conexion(fd_memoria);
+}
+
+
+
+
 
 //DIALFS
 

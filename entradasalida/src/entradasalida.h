@@ -92,6 +92,8 @@ void paquete(int);
 void inicializarEstructurasEntradaSalida(void);
 void iniciar_semaforos(void);
 void io_gen_sleep(char*, int, t_log*);
+void io_stdin_read(char*, char*, t_log*);
+void io_stdout_write(char*, char*, t_log*);
 
 //void terminar_programa(t_log*, t_config*);
 
