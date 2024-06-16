@@ -83,9 +83,7 @@ void atender_kernel_dispatch(void) {
 			log_info(loggerCpu, "--pcb recibido con exito");
             log_pcb(pcb_recibido);
             // pedir instrucciones y ejecutar ciclo de instrucción
-            ciclo_de_instruccion(pcb_recibido);
-			log_info(loggerCpu, "--ciclo de instruccion finalizado con exito");
-            ciclo_de_instruccion(pcb_recibido);			
+            ciclo_de_instruccion(pcb_recibido);	
 			log_info(loggerCpu, "--ciclo de instruccion finalizado con exito");
 			log_pcb(pcb_recibido);
             free(pcb_recibido);
@@ -243,14 +241,14 @@ void ciclo_de_instruccion(pcb* proceso_exec){
 
 	//chek_Interrupt
 
-	sem_wait(&mutexInterrupciones);
+	sem_wait(mutexInterrupciones);
 	if(hayInterrupciones){
 			log_info(loggerCpu, "--llego interrupción, desalojando proceso: %d", proceso_exec->pid);
 			//enviar PCB a KERNEL con codigo ??
 			//vaciarEspacioOcupadoTLB();
 		hayInterrupciones--;
 	}
-	sem_post(&mutexInterrupciones);
+	sem_post(mutexInterrupciones);
 
 }
 
