@@ -4,6 +4,7 @@ sem_t* semaforoServidorCPUInterrupt;
 sem_t* semaforoServidorMemoria;
 sem_t* semaforoServidorIO;
 sem_t* semaforoServidorKernel;
+sem_t* mutexInterrupciones;
 void decir_hola(char* quien) {
     printf("Hola desde %s!!\n", quien);
 }
@@ -40,7 +41,7 @@ char* estadoProcesoToString(EstadoProceso estado){
         case READY: return "READY";
         case EXECUTE: return "EXECUTE";
         case BLOCKED: return "BLOCKED";
-        case EXIT: return "EXIT";
+        case PEXIT: return "EXIT";
         default: return "UNKNOWN";
     }
 }

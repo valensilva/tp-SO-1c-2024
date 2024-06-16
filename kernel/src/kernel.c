@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     //COMIENZO PARTE SERVIDOR
     //Socket
     fd_kernel = iniciar_servidor(puertoEscuchaKernel, loggerKernel, "Kernel listo para recibir conexiones");
-    sem_post(semaforoServidorKernel);
+    sem_post(&semaforoServidorKernel);
     
     //PARTE CLIENTE EMPIEZA
 
@@ -68,6 +68,7 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
 void inicializarEstructurasKernel(void){
 	loggerKernel = iniciar_logger("kernel.log", "KERNEL", 1, LOG_LEVEL_INFO);
 	configKernel = iniciar_config("kernel.config");
@@ -88,6 +89,9 @@ void inicializarEstructurasKernel(void){
     colaNew = queue_create();
     colaReady = queue_create();
     colaExecute = queue_create();
+    if(algoritmoPlanificacion == "VRR"){
+        colaReadyPlus = queue_create();
+    }
 }
 
 void handshakeKernel(int fd_kernel,t_log* loggerKernel){
@@ -115,14 +119,13 @@ void crearProceso(char* path, int socket_memoria){
     proceso->pid = pidGeneral;
     proceso->program_counter = 0;
     proceso->quantum = quantum;
-    proceso->estado = NEW;
-    log_info(loggerKernel, "PID: <%d> - NEW", proceso->pid);
+    proceso->estado = NEW;  
     for (int i=0; i<8; i++){
         proceso->registros[i] = 0;
     }
     queue_push(colaNew, proceso);
     pidGeneral += 1;
-    
+    log_info(loggerKernel, "PID: <%d> - NEW", proceso->pid);
     enviar_path(path, socket_memoria);
     
     size_t bytes = recv(socket_memoria, &confirmacion, sizeof(int), 0);
@@ -130,11 +133,11 @@ void crearProceso(char* path, int socket_memoria){
         log_error(loggerKernel, "error al recibir confirmacion");
         return;
     }
-    log_info(loggerKernel,"Path recibido por memoria con exito: agregando proceso a lista de ready");
-    if(confirmacion == 1 && procesosEnReady < gradoMultiprogramacion){
+    log_info(loggerKernel,"Path recibido por memoria con exito");
+    if(confirmacion == 1){
+        sem_wait(semaforoEspacioEnReady);
         procesoAReady();    
     } 
-    
 }
 
 void procesoAReady(){
@@ -142,7 +145,7 @@ void procesoAReady(){
     proceso->estado = READY;
     log_info(loggerKernel, "PID: <%d> - READY", proceso->pid);
     queue_push(colaReady, proceso);
-    procesosEnReady++;
+    
 }
 int esFIFO(){
     if (strcmp(algoritmoPlanificacion, "FIFO") == 0){
@@ -163,8 +166,8 @@ void planificarPorFIFO(){
 }
 void algoritmoFIFO(t_queue* cola){
     pcb* proceso = queue_pop(cola);
+    sem_post(&semaforoEspacioEnReady);
     proceso->estado = EXECUTE;
-    procesosEnReady--;
     enviar_pcb(proceso, conexionKernelCpuDispatch);
     log_info(loggerKernel, "PID: <%d> - EXECUTE", proceso->pid);
     free(proceso);
@@ -174,6 +177,7 @@ void recibirPCBCPUFIFO(){
     op_code code_op = recibir_operacion(conexionKernelCpuDispatch);
     switch(code_op){
         case PCB_EXIT:
+            log_info(loggerKernel,"--proceso recibido para finalizacion");
             terminar_proceso(PCB_EXIT);
             break;
         default:
@@ -189,7 +193,7 @@ void planificarPorRR(){
 }
 void terminar_proceso(op_code code_op){
     pcb* proceso = recibir_pcb(conexionKernelCpuDispatch);
-    proceso->estado = EXIT;
+    //proceso->estado = PEXIT;
     t_paquete* paquete = crear_paquete(PCB_EXIT);
     enviar_paquete(paquete, conexionKernelMemoria);
     log_info(loggerKernel, "PID: <%d> - Finalizado", proceso->pid);
@@ -197,19 +201,35 @@ void terminar_proceso(op_code code_op){
 }
 void algoritmoRR(t_queue* cola){
     pcb* proceso = queue_pop(cola);
+    sem_post(&semaforoEspacioEnReady);
     proceso->estado = EXECUTE;
-    procesosEnReady--;
     enviar_pcb(proceso, conexionKernelCpuDispatch);
-    pthread_create(&hiloContadorQuantum, NULL, (void*) esperarQuantum, NULL);
-    pthread_detach(hiloContadorQuantum);
+    t_temporal contadorQuamtum = temporal_create();
+    free(proceso);    
+}
+void algoritmoVRR(){
+    if(!queue_is_empty(colaReadyPlus)){
+        pcb* proceso = queue_pop(colaReadyPlus);        
+        proceso->estado = EXECUTE;
+        temporal_resume(proceso->tiempoEnEjecucion); //habria que pausarlo cuando se recibe
+        enviar_pcb(proceso, conexionKernelCpuDispatch);
+    }
+    else{
+        pcb* proceso = queue_pop(colaReady);
+        sem_post(&semaforoEspacioEnReady);
+        proceso->estado = EXECUTE;
+        proceso->tiempoEnEjecucion = temporal_create();
+        enviar_pcb(proceso, conexionKernelCpuDispatch);
+        t_temporal contadorQuamtum = temporal_create();
+    }
+    
     free(proceso);    
 }
 void recibirPCBCPURR(){
     op_code cod_op = recibir_operacion(conexionKernelCpuDispatch);
     switch (cod_op)
     {
-    case PCB_EXIT:
-        pthread_cancel(hiloContadorQuantum);
+    case PCB_EXIT:      
         terminar_proceso(PCB_EXIT);
         break;    
     default:
@@ -217,10 +237,29 @@ void recibirPCBCPURR(){
         break;
     }
 }
-void esperarQuantum(){
-    usleep(quantum);
-    int interrupcion = 1;
-    send(conexionKernelCpuInterrupt, &interrupcion, sizeof(int), 0);
+void recibirPCBCPUVRR(){
+    op_code cod_op = recibir_operacion(conexionKernelCpuDispatch);
+    switch (cod_op)
+    {
+    case PCB_EXIT:      
+        terminar_proceso(PCB_EXIT);
+        break;
+    case FINQUANTUM:
+        //TODO
+    case LLAMADAKERNEL:
+            
+    default:
+        log_warning(loggerKernel, "operacion desconocida.");
+        break;
+    }
+}
+int verificarQuantum(pcb* proceso, t_temporal tiempo){
+    int64_t tiempoTranscurrido = temporal_gettime(tiempo);
+    if(tiempoTranscurrido >= quantum){
+        
+        return 1;
+    }
+    else return 0;  
 }
 void iniciar_semaforos(void){
 	semaforoServidorCPUDispatch = sem_open("semaforoServidorCPUDispatch", O_CREAT, 0644, 0);
@@ -243,6 +282,7 @@ void iniciar_semaforos(void){
 		log_error(loggerKernel, "error en creacion de semaforo semaforoServidorKernel");
 		exit(EXIT_FAILURE);
 	}
+    sem_init(semaforoEspacioEnReady, 0, gradoMultiprogramacion);
 }
 void atender_IO(void){
     
@@ -270,4 +310,16 @@ void atender_IO(void){
 }
 void iterator(char* value) {
 	log_info(loggerKernel, "%s", value);
+}
+
+void enviarInterrupcion(int conexion){
+    t_paquete paquete = crear_paquete(INTERRUPCION);
+    enviar_paquete(paquete, conexion);
+}
+void contadorQuantum(){
+    int confirmacion = 1;
+    while(confirmacion == 1){
+       confirmacion = verificarQuantum();
+    }
+    enviarInterrupcion(conexionKernelCpuInterrupt);
 }

@@ -14,16 +14,22 @@
 #include <utils/servidorUtils/servidorUtils.h>
 #include <utils/clienteUtils/clienteUtils.h>
 #include <utils/utilsGenerales.h>
+
 //variables globales
 t_log* loggerMemoria;
 t_config* configMemoria;
-char* puerto_escucha_memoria;
+char* puertoEscuchaMemoria;
 int fd_memoria;
 int fd_cpu;
 int fd_IO;
 int fd_kernel;
 t_list* listaInstrucciones;
 char* pathArchivo;
+
+uint32_t tamanioPag;
+uint32_t tamanioMemoria;
+uint32_t retardoMem;
+void* espacioMemoria;
 
 void iterator(char* value);
 void atender_cpu(void) ;

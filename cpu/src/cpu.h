@@ -46,6 +46,7 @@ int fd_cpu_dispatch;
 int fd_cpu_interrupt;
 int fd_kernel_dispatch;
 int fd_kernel_interrupt;
+int hayInterrupciones;
 
 
 void leer_consola(t_log*);
@@ -64,7 +65,8 @@ typedef enum {
 	SUM,
 	SUB,
 	JNZ,
-	IO_GEN_SLEEP
+	IO_GEN_SLEEP,
+	EXIT
 } cod_instruccion;
 
 typedef enum {

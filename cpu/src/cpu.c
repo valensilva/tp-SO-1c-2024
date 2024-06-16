@@ -15,10 +15,10 @@ int main(int argc, char* argv[]) {
 	iniciar_semaforos();
 
 	//INICIA PARTE CLIENTE
-	sem_wait(semaforoServidorMemoria);
+	sem_wait(&semaforoServidorMemoria);
 	log_info(loggerCpu, "SEM: servidor de memoria listo");
     conexionCpuMemoria = crear_conexion(ipMemoria, puertoMemoria);
-	sem_post(semaforoServidorMemoria);
+	sem_post(&semaforoServidorMemoria);
     
 	if (conexionCpuMemoria == -1) {
         log_error(loggerCpu, "Error al crear conexión con la memoria");
@@ -28,19 +28,13 @@ int main(int argc, char* argv[]) {
     log_info(loggerCpu, "Conexión establecida con la memoria");
 	handshakeCliente(conexionCpuMemoria, loggerCpu);
 
-/*
-	char * instruccion;
-	recibir_instruccion(2,conexionCpuMemoria,loggerCpu, &instruccion);
-	//TERMINA PARTE CLIENTE
-*/
-
 	//INICIA SERVIDOR CPU
 
 	//incio servidores
 	fd_cpu_dispatch = iniciar_servidor(puertoEscuchaDispatch, loggerCpu, "cpu dispatch lista para recibir conexiones");
-	sem_post(semaforoServidorCPUDispatch);
+	sem_post(&semaforoServidorCPUDispatch);
 	fd_cpu_interrupt = iniciar_servidor(puertoEscuchaInterrupt, loggerCpu, "cpu interrupt lista para recibir conexiones");
-	sem_post(semaforoServidorCPUInterrupt);
+	sem_post(&semaforoServidorCPUInterrupt);
 
 	//atiendo kernel dispatch
 	pthread_t thread_kernel_dispatch;
@@ -67,6 +61,7 @@ void inicializarEstructurasCpu(void){
 	puertoEscuchaInterrupt = config_get_string_value(configCpu, "PUERTO_ESCUCHA_INTERRUPT");
 	cantidadEntradasTLB = config_get_int_value(configCpu, "CANTIDAD_ENTRADAS_TLB");
 	algoritmoTLB = config_get_string_value(configCpu, "ALGORITMO_TLB");
+	hayInterrupciones = 0;
 }
 void atender_kernel_dispatch(void) {
 	fd_kernel_dispatch = esperar_cliente(fd_cpu_dispatch, loggerCpu, "kernel dispatch conectado");
@@ -87,10 +82,9 @@ void atender_kernel_dispatch(void) {
             }
 			log_info(loggerCpu, "--pcb recibido con exito");
             log_pcb(pcb_recibido);
-			puts("");
             // pedir instrucciones y ejecutar ciclo de instrucción
-            ciclo_de_instruccion(pcb_recibido);
-			puts("");
+            ciclo_de_instruccion(pcb_recibido);	
+			log_info(loggerCpu, "--ciclo de instruccion finalizado con exito");
 			log_pcb(pcb_recibido);
             free(pcb_recibido);
             break;
@@ -154,9 +148,7 @@ void ciclo_de_instruccion(pcb* proceso_exec){
 		uint32_t valor = strtouint32(instruccion_separada[2]);
 
 		log_info(loggerCpu, "PID: %d - Ejecutando: %s - %s %s", proceso_exec->pid, instruccion_separada[0], instruccion_separada[1], instruccion_separada[2]);
-
 		//execute
-		log_info(loggerCpu, "INSTRUCCION SET ");
 		if(reg1 < 4) {
 			registros_8[reg1] = (uint8_t)valor;
 		} else {
@@ -168,8 +160,6 @@ void ciclo_de_instruccion(pcb* proceso_exec){
 		break;
 
 	case SUM:
-		log_info(loggerCpu, "INSTRUCCION SUM");
-
 		reg1 = obtener_valor_registro(instruccion_separada[1]);
 		uint32_t reg2 = obtener_valor_registro(instruccion_separada[2]);
 
@@ -240,11 +230,25 @@ void ciclo_de_instruccion(pcb* proceso_exec){
 		log_info(loggerCpu, "PID: %d - Ejecutando: %s - %s %s", proceso_exec->pid, instruccion_separada[0], instruccion_separada[1]);
 		
 		break;	
+	case EXIT:
+		//Enviar PCB a KERNEL con codigo PCB_EXIT
+		proceso_exec->estado = PEXIT;
+		enviar_pcb_exit(proceso_exec, fd_kernel_dispatch);
+		break;
 	default:
 		break;
 	}
 
 	//chek_Interrupt
+
+	sem_wait(mutexInterrupciones);
+	if(hayInterrupciones){
+			log_info(loggerCpu, "--llego interrupción, desalojando proceso: %d", proceso_exec->pid);
+			//enviar PCB a KERNEL con codigo ??
+			//vaciarEspacioOcupadoTLB();
+		hayInterrupciones--;
+	}
+	sem_post(mutexInterrupciones);
 
 }
 
@@ -269,6 +273,7 @@ uint32_t obtener_valor_cod(char *str) {
     if (strcmp(str, "SUB") == 0) return SUB;
     if (strcmp(str, "JNZ") == 0) return JNZ;
     if (strcmp(str, "IO_GEN_SLEEP") == 0) return IO_GEN_SLEEP;
+	if (strcmp(str, "EXIT")==0) return EXIT;
 	else return 0;
 }
 
@@ -292,6 +297,11 @@ void iniciar_semaforos(void){
 	semaforoServidorMemoria = sem_open("semaforoServidorMemoria", O_CREAT, 0644, 0);
 	if(semaforoServidorMemoria == SEM_FAILED){
 		log_error(loggerCpu, "error en creacion de semaforo semaforoServidorMemoria");
+		exit(EXIT_FAILURE);
+	}
+	mutexInterrupciones = sem_open("semaforoInterrupciones", O_CREAT, 0644, 1);
+	if(mutexInterrupciones == SEM_FAILED){
+		log_error(loggerCpu, "error en creacion de semaforo mutexInterrupciones");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -345,4 +355,10 @@ void log_pcb(pcb* pcb_recibido){
     log_info(loggerCpu, "%-16s %s %d %s","Registro EBX","[",pcb_recibido->registros[5],"]");
     log_info(loggerCpu, "%-16s %s %d %s","Registro ECX","[",pcb_recibido->registros[6],"]");
     log_info(loggerCpu, "%-16s %s %d %s","Registro EDX","[",pcb_recibido->registros[7],"]");
+}
+
+void enviar_pcb_exit(pcb* pcb_a_enviar, int socket_cliente) {
+    int cod_op = PCB_EXIT;
+    send(socket_cliente, &cod_op, sizeof(int), 0); // Enviar el código de operación primero
+    enviar_pcb(pcb_a_enviar, socket_cliente); // Luego enviar el PCB
 }

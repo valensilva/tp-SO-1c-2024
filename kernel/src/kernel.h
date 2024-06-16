@@ -40,7 +40,9 @@ int procesosEnReady;
 t_queue* colaNew;
 t_queue* colaReady;
 t_queue* colaExecute;
+t_queue* colaReadyPlus;
 pthread_t hiloContadorQuantum;
+sem_t* semaforoEspacioEnReady;
 
 
 
