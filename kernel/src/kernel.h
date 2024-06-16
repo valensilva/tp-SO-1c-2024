@@ -30,7 +30,7 @@ int quantum;
 
 //recursos ??
 //instancias recursos ??
-int gradoMultiprogramacion;
+unsigned int gradoMultiprogramacion;
 int conexionKernelCpuDispatch;
 int conexionKernelCpuInterrupt; 
 int fd_kernel;
@@ -58,16 +58,23 @@ void enviarProcesoACpu(int conexion);
 void planificarPorFIFO();
 void algoritmoFIFO(t_queue* cola);
 void recibirPCBCPUFIFO();
-void terminar_proceso(op_code code_op);
+void terminar_proceso();
 void esperarQuantum();
 void recibirPCBCPURR();
 void algoritmoRR(t_queue* cola);
-void terminar_proceso(op_code code_op);
+void terminar_proceso();
 int esRR();
 int esFIFO();
+int esVRR();
 void planificarPorRR();
 void atender_IO(void);
 void iterator(char* value);
+void enviarInterrupcion(int conexion);
+void contadorQuantum(pcb* proceso);
+void llamadaKernel();
+void planificadorCortoPlazo();
+void algoritmoVRR();
+void recibirPCBCPUVRR();
 //void terminar_programa(t_log*, t_config*);
 
 
