@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     //COMIENZO PARTE SERVIDOR
     //Socket
     fd_kernel = iniciar_servidor(puertoEscuchaKernel, loggerKernel, "Kernel listo para recibir conexiones");
-    sem_post(&semaforoServidorKernel);
+    sem_post(semaforoServidorKernel);
     
     //PARTE CLIENTE EMPIEZA
 
@@ -50,8 +50,7 @@ int main(int argc, char* argv[]) {
         if (strcmp(cod_op_kernel, "INICIAR_PROCESO") == 0){
             crearProceso(path, conexionKernelMemoria);
             
-            if(esFIFO() == 1) planificarPorFIFO();
-            else if(esRR() == 1) planificarPorRR();
+            planificadorCortoPlazo();
             
         }
         else {
@@ -88,7 +87,7 @@ void inicializarEstructurasKernel(void){
     colaNew = queue_create();
     colaReady = queue_create();
     colaExecute = queue_create();
-    if(algoritmoPlanificacion == "VRR"){
+    if(esVRR()==1){
         colaReadyPlus = queue_create();
     }
 }
@@ -157,6 +156,11 @@ int esRR(){
         return 1;
     }else return 0;
 }
+int esVRR(){
+    if(strcmp(algoritmoPlanificacion, "VRR") == 0){
+        return 1;
+    }else return 0;
+}
 void planificarPorFIFO(){
     while(1){
         algoritmoFIFO(colaReady);
@@ -165,7 +169,7 @@ void planificarPorFIFO(){
 }
 void algoritmoFIFO(t_queue* cola){
     pcb* proceso = queue_pop(cola);
-    sem_post(&semaforoEspacioEnReady);
+    sem_post(semaforoEspacioEnReady);
     proceso->estado = EXECUTE;
     enviar_pcb(proceso, conexionKernelCpuDispatch);
     log_info(loggerKernel, "PID: <%d> - EXECUTE", proceso->pid);
@@ -177,8 +181,10 @@ void recibirPCBCPUFIFO(){
     switch(code_op){
         case PCB_EXIT:
             log_info(loggerKernel,"--proceso recibido para finalizacion");
-            terminar_proceso(PCB_EXIT);
+            terminar_proceso();
             break;
+        case LLAMADAKERNEL:
+            llamadaKernel();
         default:
             log_warning(loggerKernel, "operacion desconocida desde CPU Dispatch.");
             break;
@@ -190,7 +196,13 @@ void planificarPorRR(){
         recibirPCBCPURR();
     }
 }
-void terminar_proceso(op_code code_op){
+void planificarPorVRR(){
+    while(1){
+        algoritmoVRR();
+        recibirPCBCPUVRR();
+    }
+}
+void terminar_proceso(){
     pcb* proceso = recibir_pcb(conexionKernelCpuDispatch);
     //proceso->estado = PEXIT;
     t_paquete* paquete = crear_paquete(PCB_EXIT);
@@ -200,10 +212,10 @@ void terminar_proceso(op_code code_op){
 }
 void algoritmoRR(t_queue* cola){
     pcb* proceso = queue_pop(cola);
-    sem_post(&semaforoEspacioEnReady);
+    sem_post(semaforoEspacioEnReady);
     proceso->estado = EXECUTE;
     enviar_pcb(proceso, conexionKernelCpuDispatch);
-    t_temporal contadorQuamtum = temporal_create();
+    t_temporal* contadorQuamtum = temporal_create(); //que hacer con esto?
     free(proceso);    
 }
 void algoritmoVRR(){
@@ -212,17 +224,19 @@ void algoritmoVRR(){
         proceso->estado = EXECUTE;
         temporal_resume(proceso->tiempoEnEjecucion); //habria que pausarlo cuando se recibe
         enviar_pcb(proceso, conexionKernelCpuDispatch);
+        free(proceso); 
     }
     else{
         pcb* proceso = queue_pop(colaReady);
-        sem_post(&semaforoEspacioEnReady);
+        sem_post(semaforoEspacioEnReady);
         proceso->estado = EXECUTE;
         proceso->tiempoEnEjecucion = temporal_create();
         enviar_pcb(proceso, conexionKernelCpuDispatch);
-        t_temporal contadorQuamtum = temporal_create();
+        t_temporal* contadorQuamtum = temporal_create();
+        free(proceso); 
     }
     
-    free(proceso);    
+       
 }
 void recibirPCBCPURR(){
     op_code cod_op = recibir_operacion(conexionKernelCpuDispatch);
@@ -230,7 +244,12 @@ void recibirPCBCPURR(){
     {
     case PCB_EXIT:      
         terminar_proceso(PCB_EXIT);
-        break;    
+        break;  
+    case FINQUANTUM:
+        break;
+    case LLAMADAKERNEL:
+        llamadaKernel();
+        break;  
     default:
         log_warning(loggerKernel, "operacion desconocida.");
         break;
@@ -246,19 +265,21 @@ void recibirPCBCPUVRR(){
     case FINQUANTUM:
         //TODO
     case LLAMADAKERNEL:
-            
+        llamadaKernel();
     default:
         log_warning(loggerKernel, "operacion desconocida.");
         break;
     }
 }
-int verificarQuantum(pcb* proceso, t_temporal tiempo){
-    int64_t tiempoTranscurrido = temporal_gettime(tiempo);
+int verificarQuantum(pcb* proceso){
+   /* int64_t tiempoTranscurrido = temporal_gettime(contadorDeQuantum);
+   terminar, fijarse como implementar el contador de quantum, en un hilo quizas?
     if(tiempoTranscurrido >= quantum){
         
         return 1;
     }
-    else return 0;  
+    
+    else */return 0;  
 }
 void iniciar_semaforos(void){
 	semaforoServidorCPUDispatch = sem_open("semaforoServidorCPUDispatch", O_CREAT, 0644, 0);
@@ -281,7 +302,11 @@ void iniciar_semaforos(void){
 		log_error(loggerKernel, "error en creacion de semaforo semaforoServidorKernel");
 		exit(EXIT_FAILURE);
 	}
-    sem_init(semaforoEspacioEnReady, 0, gradoMultiprogramacion);
+    semaforoEspacioEnReady = sem_open("semaforoEspacioEnReady", O_CREAT, 0644, gradoMultiprogramacion);
+    if(semaforoEspacioEnReady == SEM_FAILED){
+		log_error(loggerKernel, "error en creacion de semaforo semaforoEspacioEnReady");
+		exit(EXIT_FAILURE);
+	}
 }
 void atender_IO(void){
     
@@ -312,13 +337,31 @@ void iterator(char* value) {
 }
 
 void enviarInterrupcion(int conexion){
-    t_paquete paquete = crear_paquete(INTERRUPCION);
+    t_paquete* paquete = crear_paquete(INTERRUPCION);
     enviar_paquete(paquete, conexion);
 }
-void contadorQuantum(){
+//falta
+void contadorQuantum(pcb* proceso){
     int confirmacion = 1;
     while(confirmacion == 1){
-       confirmacion = verificarQuantum();
+       confirmacion = verificarQuantum(proceso);
     }
     enviarInterrupcion(conexionKernelCpuInterrupt);
+}
+void llamadaKernel(){
+    //que haga la llamada de kernel
+    //y se lo envie de vuelta a la cola de readyPlus si es VRR y tiene quantum todavia y si no a la de ready
+    pcb* proceso = recibir_pcb(conexionKernelCpuDispatch);
+    temporal_stop(proceso->tiempoEnEjecucion);
+    //llamda a kernel
+    int64_t quantumRestante = temporal_gettime(proceso->tiempoEnEjecucion);
+    if(esVRR()==1 && quantumRestante < quantum){
+        queue_push(colaReadyPlus, proceso);
+    } else queue_push(colaReady, proceso);
+    
+}
+void planificadorCortoPlazo(){
+    if(esFIFO() == 1) planificarPorFIFO();
+    else if(esRR() == 1) planificarPorRR();
+    else if(esVRR() == 1) planificarPorVRR();
 }
