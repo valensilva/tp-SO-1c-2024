@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "hello.h": "c"
+        "hello.h": "c",
+        "kernel.h": "c",
+        "servidorutils.h": "c"
     }
 }

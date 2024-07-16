@@ -13,6 +13,8 @@
 #include <utils/clienteUtils/clienteUtils.h>
 #include <utils/servidorUtils/servidorUtils.h>
 #include <utils/utilsGenerales.h>
+
+
 #define MAX_CONSOLA 100
 
 
@@ -43,6 +45,7 @@ t_queue* colaExecute;
 t_queue* colaReadyPlus;
 pthread_t hiloContadorQuantum;
 sem_t* semaforoEspacioEnReady;
+sem_t* semaforoProcesoEnReady;
 
 
 

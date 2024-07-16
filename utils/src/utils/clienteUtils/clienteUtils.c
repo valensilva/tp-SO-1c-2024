@@ -187,6 +187,7 @@ void enviar_pcb(pcb* pcb_a_enviar, int socket_cliente) {
     agregar_a_paquete(paquete, &(pcb_a_enviar->pid), sizeof(int));
     agregar_a_paquete(paquete, &(pcb_a_enviar->program_counter), sizeof(int));
     agregar_a_paquete(paquete, &(pcb_a_enviar->quantum), sizeof(int));
+	agregar_a_paquete(paquete, &(pcb_a_enviar->quantum_restante), sizeof(int));
     
     for (int i = 0; i < 7; i++) {
         agregar_a_paquete(paquete, &(pcb_a_enviar->registros[i]), sizeof(int));

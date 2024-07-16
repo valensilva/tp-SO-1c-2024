@@ -32,6 +32,7 @@ typedef struct
     int pid;
     int program_counter;
     int quantum;
+    int quantum_restante;
     EstadoProceso estado;
     int registros[7];
     t_temporal* tiempoEnEjecucion;

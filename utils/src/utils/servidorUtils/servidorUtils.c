@@ -161,6 +161,11 @@ pcb* deserializar_pcb(void* buffer, int* desplazamiento) {
     *desplazamiento += sizeof(int);
     memcpy(&(proceso->quantum), buffer + *desplazamiento, size);
     *desplazamiento += size;
+    // Deserializar quantum_restante
+    memcpy(&size, buffer + *desplazamiento, sizeof(int));
+    *desplazamiento += sizeof(int);
+    memcpy(&(proceso->quantum), buffer + *desplazamiento, size);
+    *desplazamiento += size;
 
     // Deserializar registros
     for (int i = 0; i < 7; i++) {
