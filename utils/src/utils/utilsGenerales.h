@@ -20,6 +20,14 @@ extern sem_t* semaforoServidorMemoria;
 extern sem_t* semaforoServidorIO;
 extern sem_t* semaforoServidorKernel;
 extern sem_t* mutexInterrupciones;
+
+typedef struct {
+    char* nombre;
+    int instancias;
+    t_list* cola_bloqueados;
+} t_recurso;
+
+
 typedef enum{
     NEW,
     READY,
